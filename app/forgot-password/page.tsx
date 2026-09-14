@@ -1,8 +1,8 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { AuthShell } from '@/components/auth/auth-shell';
 import { getSession } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
@@ -51,7 +51,7 @@ async function requestPasswordReset(formData: FormData) {
 }
 
 const inputClassName =
-  'mt-3 w-full rounded-card border-[1.5px] border-cocm-ink/15 bg-white px-4 py-3 text-base text-cocm-ink outline-none transition placeholder:text-cocm-ink/40 focus:border-cocm-slate focus:ring-2 focus:ring-cocm-slate/20';
+  'mt-2 h-11 w-full rounded-[12px] border-[1.5px] border-cocm-ink/15 bg-white px-4 text-[15px] text-cocm-ink outline-none transition placeholder:text-cocm-ink/40 hover:border-cocm-ink/25 focus:border-cocm-blue focus:ring-2 focus:ring-cocm-blue/20';
 
 export default async function ForgotPasswordPage({ searchParams }: ForgotPasswordPageProps) {
   const params = await searchParams;
@@ -79,46 +79,24 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
           : null;
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,_#e4e5fb_0%,_#faf7f0_45%,_#f5efdc_100%)] px-4 py-10">
-      <div className="mx-auto max-w-4xl rounded-panel bg-white p-8 shadow-panel">
-        <div className="flex items-center gap-4">
-          <Image
-            src="/cocm-logo.png"
-            alt="COCM"
-            width={64}
-            height={64}
-            className="h-16 w-16 rounded-full object-cover"
-            priority
-          />
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-cocm-slate">
-              {t.forgotPasswordEyebrow}
-            </p>
-            <h1 className="mt-2 font-serif text-4xl tracking-tight text-cocm-ink">
-              {t.forgotPasswordTitle}
-            </h1>
-          </div>
+    <AuthShell lang={lang} title={t.forgotPasswordTitle} subtitle={t.forgotPasswordDesc}>
+      {message ? (
+        <div
+          className={`mb-4 rounded-[12px] border p-4 text-sm ${
+            message.tone === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+              : 'border-cocm-red/20 bg-cocm-red-light/60 text-cocm-ink'
+          }`}
+          role="alert"
+        >
+          {message.text}
         </div>
-        <p className="mt-4 max-w-2xl text-cocm-slate">{t.forgotPasswordDesc}</p>
+      ) : null}
 
-        {message ? (
-          <div
-            className={`mt-6 rounded-xl border p-4 text-sm ${
-              message.tone === 'success'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                : 'border-cocm-red-light bg-cocm-red-light text-cocm-ink'
-            }`}
-          >
-            {message.text}
-          </div>
-        ) : null}
-
-        {supabaseReady && !params.sent ? (
-          <form
-            action={requestPasswordReset}
-            className="border-cocm-ink/8 mt-8 rounded-card border bg-white p-6 shadow-card"
-          >
-            <label htmlFor="email" className="block text-sm font-semibold text-cocm-ink">
+      {supabaseReady && !params.sent ? (
+        <form action={requestPasswordReset} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-[13px] font-semibold tracking-[0.01em] text-cocm-ink">
               {t.email}
             </label>
             <input
@@ -130,24 +108,34 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
               placeholder="you@example.com"
               className={inputClassName}
             />
-            <button
-              type="submit"
-              className="mt-6 rounded-xl bg-cocm-red px-6 py-3 font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cocm-red/40"
-            >
-              {t.sendResetLink}
-            </button>
-          </form>
-        ) : null}
-
-        <p className="mt-6 text-sm text-cocm-slate">
-          <Link
-            href="/sign-in"
-            className="font-semibold text-cocm-red underline underline-offset-2"
+          </div>
+          <button
+            type="submit"
+            className="h-11 w-full rounded-[12px] bg-cocm-blue px-6 text-[15px] font-semibold text-white transition-all hover:bg-[#3f43a8] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cocm-blue/40"
           >
-            {t.backToSignIn}
-          </Link>
-        </p>
-      </div>
-    </main>
+            {t.sendResetLink}
+          </button>
+        </form>
+      ) : null}
+
+      <p className="mt-6 text-center text-sm text-cocm-slate">
+        <Link
+          href="/sign-in"
+          className="font-semibold text-cocm-blue underline-offset-2 hover:underline"
+        >
+          {t.backToSignIn}
+        </Link>
+      </p>
+
+      <form action="/api/lang" method="post" className="mt-6 flex justify-center">
+        <input type="hidden" name="lang" value={lang === 'zh' ? 'en' : 'zh'} />
+        <button
+          type="submit"
+          className="rounded-full border border-cocm-ink/15 px-4 py-1.5 text-[13px] font-semibold text-cocm-slate transition hover:border-cocm-ink/30 hover:text-cocm-ink"
+        >
+          {lang === 'zh' ? 'English' : '中文'}
+        </button>
+      </form>
+    </AuthShell>
   );
 }
