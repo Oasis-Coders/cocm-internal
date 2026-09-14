@@ -14,7 +14,7 @@ export default async function AdminPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Link
           href="/admin/users"
-          className="rounded-card border border-cocm-ink/10 bg-white p-5 shadow-card transition hover:border-cocm-ink/25"
+          className="card-hover rounded-[20px] border border-cocm-ink/10 bg-white p-6 shadow-card"
         >
           <span className="font-semibold text-cocm-ink">{t.users}</span>
           <span className="mt-1 block text-sm text-cocm-slate">{t.usersDesc}</span>

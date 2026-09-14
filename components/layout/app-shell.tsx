@@ -1,11 +1,10 @@
-import Image from 'next/image';
 import { cookies } from 'next/headers';
 
-import { SignOutButton } from '@/components/auth/sign-out-button';
 import { MobileSidebar } from '@/components/layout/mobile-sidebar';
-import { SidebarNav } from '@/components/layout/sidebar-nav';
+import { SidebarPanel } from '@/components/layout/sidebar-panel';
 import { localizeNavItem, navItems, type Lang } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
+import { translations } from '@/lib/i18n/translations';
 
 type AppShellProps = {
   title: string;
@@ -21,6 +20,7 @@ async function getLang(): Promise<Lang> {
 export async function AppShell({ title, eyebrow, children }: AppShellProps) {
   const session = await getSession();
   const lang = await getLang();
+  const t = translations[lang];
 
   const filteredNav = navItems
     .filter(
@@ -45,59 +45,47 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
             ? '同工'
             : 'Staff';
 
+  const displayName = session.displayName || '';
+  const avatarInitial =
+    displayName.trim().charAt(0).toUpperCase() ||
+    session.email.trim().charAt(0).toUpperCase() ||
+    'C';
+
   return (
     <div className="min-h-screen bg-cocm-paper text-cocm-ink">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 px-4 py-4 lg:flex-row lg:px-8">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[200] focus:rounded-[10px] focus:bg-white focus:px-4 focus:py-2 focus:text-[13px] focus:font-medium focus:text-cocm-ink focus:shadow-lg"
+      >
+        {lang === 'zh' ? '跳到主内容' : 'Skip to main content'}
+      </a>
+      <div className="mx-auto flex max-w-[1600px] lg:gap-6 lg:px-6 lg:py-4">
         <MobileSidebar>
-          <div className="rounded-panel bg-cocm-ink p-5 text-white shadow-card">
-            <div className="flex items-center gap-3">
-              <Image
-                src="/cocm-logo.png"
-                alt="COCM"
-                width={44}
-                height={44}
-                className="h-11 w-11 rounded-full bg-white object-cover"
-                priority
-              />
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-cocm-sky">
-                  COCM
+          <SidebarPanel
+            items={filteredNav}
+            displayName={displayName}
+            email={session.email}
+            roleLabel={roleLabel}
+            avatarInitial={avatarInitial}
+            signOutLabel={t.common.signOut}
+            lang={lang}
+          />
+        </MobileSidebar>
+
+        <main id="main-content" className="min-w-0 flex-1">
+          <div className="sticky top-0 z-10 -mt-px border-b border-cocm-ink/5 bg-cocm-paper/80 backdrop-blur-xl lg:rounded-t-[20px] lg:border lg:border-cocm-ink/5">
+            <div className="flex items-center justify-between py-4 pl-16 pr-4 lg:px-8 lg:py-6 lg:pl-8">
+              <div className="min-w-0 flex-1">
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-cocm-red">
+                  {eyebrow}
                 </p>
-                <h1 className="mt-1 font-serif text-2xl tracking-tight">
-                  {lang === 'zh' ? '内部系统' : 'Internal'}
+                <h1 className="font-serif text-[24px] leading-none tracking-tight text-cocm-ink lg:text-[28px]">
+                  {title}
                 </h1>
               </div>
             </div>
           </div>
-
-          <div className="mt-4 rounded-card border border-cocm-ink/10 bg-white p-4 shadow-card">
-            <p className="text-sm font-semibold text-cocm-ink">{session.displayName}</p>
-            <p className="text-sm text-cocm-slate">{session.email}</p>
-            <p className="mt-2 inline-flex rounded-[10px] bg-cocm-sand px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-cocm-ink">
-              {roleLabel}
-            </p>
-          </div>
-
-          <div className="mt-5 flex min-h-0 flex-1 flex-col">
-            <SidebarNav items={filteredNav} />
-
-            {session.isAuthenticated && (
-              <div className="mt-4 border-t border-cocm-ink/10 pt-4">
-                <SignOutButton />
-              </div>
-            )}
-          </div>
-        </MobileSidebar>
-
-        <main className="flex-1">
-          <header className="border-cocm-ink/8 rounded-panel border bg-white p-6 shadow-card">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-cocm-slate">
-              {eyebrow}
-            </p>
-            <h2 className="mt-3 font-serif text-4xl tracking-tight text-cocm-ink">{title}</h2>
-          </header>
-
-          <section className="mt-6">{children}</section>
+          <div className="px-4 py-6 lg:px-8 lg:py-8">{children}</div>
         </main>
       </div>
     </div>

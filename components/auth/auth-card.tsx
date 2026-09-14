@@ -14,7 +14,9 @@ type AuthCardProps = {
 };
 
 const inputClassName =
-  'mt-3 w-full rounded-card border-[1.5px] border-cocm-ink/15 bg-white px-4 py-3 text-base text-cocm-ink outline-none transition placeholder:text-cocm-ink/40 focus:border-cocm-slate focus:ring-2 focus:ring-cocm-slate/20';
+  'mt-2 w-full rounded-[12px] border-[1.5px] border-cocm-ink/15 bg-white px-4 py-3 text-[15px] text-cocm-ink outline-none transition placeholder:text-cocm-ink/35 hover:border-cocm-ink/25 focus:border-cocm-red focus:ring-2 focus:ring-cocm-red/20';
+
+const labelClassName = 'block text-[13px] font-semibold tracking-[0.01em] text-cocm-ink';
 
 export async function AuthCard({ mode, action, redirectTo, status, message, forgotPasswordLabel }: AuthCardProps) {
   const store = await cookies();
@@ -45,122 +47,135 @@ export async function AuthCard({ mode, action, redirectTo, status, message, forg
   const alertClassName =
     status === 'success'
       ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-      : 'border-cocm-red-light bg-cocm-red-light text-cocm-ink';
+      : 'border-cocm-red/20 bg-cocm-red-light/60 text-cocm-ink';
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,_#e4e5fb_0%,_#faf7f0_45%,_#f5efdc_100%)] px-4 py-10">
-      <div className="mx-auto max-w-4xl rounded-panel bg-white p-8 shadow-panel">
-        <div className="flex items-center gap-4">
-          <Image
-            src="/cocm-logo.png"
-            alt="COCM"
-            width={64}
-            height={64}
-            className="h-16 w-16 rounded-full object-cover"
-            priority
-          />
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-cocm-slate">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-cocm-paper px-4 py-10">
+      {/* Decorative orbs */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div className="loading-orb loading-orb-1" />
+        <div className="loading-orb loading-orb-2" />
+        <div className="loading-orb loading-orb-3" />
+      </div>
+
+      <div className="relative w-full max-w-md">
+        <div className="rounded-[28px] border border-cocm-ink/10 bg-white p-8 shadow-panel md:p-10">
+          <div className="flex flex-col items-center text-center">
+            <Image
+              src="/cocm-logo.png"
+              alt="COCM"
+              width={64}
+              height={64}
+              className="h-16 w-16 rounded-full object-cover shadow-card ring-1 ring-cocm-ink/10"
+              priority
+            />
+            <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.3em] text-cocm-red">
               {copy.eyebrow}
             </p>
-            <h1 className="mt-2 font-serif text-4xl tracking-tight text-cocm-ink">{copy.title}</h1>
+            <h1 className="mt-2 font-serif text-[32px] leading-tight tracking-tight text-cocm-ink">
+              {copy.title}
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-cocm-slate">{copy.description}</p>
           </div>
-        </div>
-        <p className="mt-4 max-w-2xl text-cocm-slate">{copy.description}</p>
 
-        {message ? (
-          <div className={`mt-6 rounded-xl border p-4 text-sm ${alertClassName}`}>{message}</div>
-        ) : null}
-
-        <form
-          action={action}
-          className="border-cocm-ink/8 mt-8 rounded-card border bg-white p-6 shadow-card"
-        >
-          <input type="hidden" name="redirectTo" value={redirectTo} />
-          {mode === 'sign-up' ? (
-            <div>
-              <label
-                htmlFor="displayName"
-                className="block text-sm font-semibold text-cocm-ink"
-              >
-                {t.displayName}
-              </label>
-              <input
-                id="displayName"
-                name="displayName"
-                type="text"
-                required
-                autoComplete="nickname"
-                placeholder={t.displayNamePlaceholder}
-                className={inputClassName}
-              />
+          {message ? (
+            <div className={`mt-6 rounded-[12px] border p-4 text-sm leading-relaxed ${alertClassName}`} role="alert">
+              {message}
             </div>
           ) : null}
 
-          <label
-            htmlFor="email"
-            className={`${mode === 'sign-up' ? 'mt-5' : ''} block text-sm font-semibold text-cocm-ink`}
-          >
-            {t.email}
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            placeholder="you@example.com"
-            className={inputClassName}
-          />
+          <form action={action} className="mt-6">
+            <input type="hidden" name="redirectTo" value={redirectTo} />
+            {mode === 'sign-up' ? (
+              <div>
+                <label htmlFor="displayName" className={labelClassName}>
+                  {t.displayName}
+                </label>
+                <input
+                  id="displayName"
+                  name="displayName"
+                  type="text"
+                  required
+                  autoComplete="nickname"
+                  placeholder={t.displayNamePlaceholder}
+                  className={inputClassName}
+                />
+              </div>
+            ) : null}
 
-          <label htmlFor="password" className="mt-5 block text-sm font-semibold text-cocm-ink">
-            {t.password}
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
-            placeholder={mode === 'sign-in' ? t.passwordPlaceholderSignIn : t.passwordPlaceholderSignUp}
-            className={inputClassName}
-          />
+            <div className={mode === 'sign-up' ? 'mt-4' : ''}>
+              <label htmlFor="email" className={labelClassName}>
+                {t.email}
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="you@example.com"
+                className={inputClassName}
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="mt-6 rounded-xl bg-cocm-red px-6 py-3 font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cocm-red/40"
-          >
-            {copy.submit}
-          </button>
-        </form>
+            <div className="mt-4">
+              <label htmlFor="password" className={labelClassName}>
+                {t.password}
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
+                placeholder={mode === 'sign-in' ? t.passwordPlaceholderSignIn : t.passwordPlaceholderSignUp}
+                className={inputClassName}
+              />
+            </div>
 
-        <p className="mt-6 text-sm text-cocm-slate">
-          {copy.alternateLabel}{' '}
-          <Link
-            href={copy.alternateHref}
-            className="font-semibold text-cocm-red underline underline-offset-2"
-          >
-            {copy.alternateCta}
-          </Link>
-        </p>
-
-        {mode === 'sign-in' && forgotPasswordLabel ? (
-          <p className="mt-3 text-sm text-cocm-slate">
-            <Link
-              href="/forgot-password"
-              className="font-semibold text-cocm-red underline underline-offset-2"
+            <button
+              type="submit"
+              className="mt-6 w-full rounded-[12px] bg-cocm-red px-6 py-3.5 text-[15px] font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cocm-red/40"
             >
-              {forgotPasswordLabel}
+              {copy.submit}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-cocm-slate">
+            {copy.alternateLabel}{' '}
+            <Link
+              href={copy.alternateHref}
+              className="font-semibold text-cocm-red underline-offset-2 hover:underline"
+            >
+              {copy.alternateCta}
             </Link>
           </p>
-        ) : null}
 
-        <form action="/api/lang" method="post" className="mt-4">
-          <input type="hidden" name="lang" value={lang === 'zh' ? 'en' : 'zh'} />
-          <button type="submit" className="text-sm font-semibold text-cocm-slate underline underline-offset-2">
-            {lang === 'zh' ? 'English' : '中文'}
-          </button>
-        </form>
+          {mode === 'sign-in' && forgotPasswordLabel ? (
+            <p className="mt-3 text-center text-sm text-cocm-slate">
+              <Link
+                href="/forgot-password"
+                className="font-semibold text-cocm-red underline-offset-2 hover:underline"
+              >
+                {forgotPasswordLabel}
+              </Link>
+            </p>
+          ) : null}
+
+          <form action="/api/lang" method="post" className="mt-6 flex justify-center">
+            <input type="hidden" name="lang" value={lang === 'zh' ? 'en' : 'zh'} />
+            <button
+              type="submit"
+              className="rounded-full border border-cocm-ink/15 px-4 py-1.5 text-[13px] font-semibold text-cocm-slate transition hover:border-cocm-ink/30 hover:text-cocm-ink"
+            >
+              {lang === 'zh' ? 'English' : '中文'}
+            </button>
+          </form>
+        </div>
+
+        <p className="mt-5 text-center text-xs text-cocm-slate/70">
+          {lang === 'zh' ? 'COCM 内部系统' : 'COCM Internal System'}
+        </p>
       </div>
     </main>
   );

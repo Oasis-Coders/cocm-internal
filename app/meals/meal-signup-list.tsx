@@ -89,17 +89,17 @@ export function MealSignupList({ days, initialSigned, settings, labels, lang }: 
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       {days.map((day) => (
         <div
           key={day.meal_date}
-          className="rounded-card border border-cocm-ink/10 bg-white p-4 shadow-card md:p-5"
+          className="rounded-[20px] border border-cocm-ink/10 bg-white p-4 shadow-card transition-shadow hover:shadow-card-hover md:p-5"
         >
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h3 className="font-serif text-xl text-cocm-ink">{dateLabel(day.meal_date)}</h3>
+            <h3 className="font-serif text-xl tracking-tight text-cocm-ink">{dateLabel(day.meal_date)}</h3>
             {day.note ? <p className="text-sm text-cocm-slate">{day.note}</p> : null}
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-2 md:gap-3">
+          <div className="mt-4 grid grid-cols-3 gap-2 md:gap-3">
             {mealTypes.map((type) => {
               const available = isMealAvailable(day, type);
               const key = signupKey(day.meal_date, type);
@@ -113,15 +113,15 @@ export function MealSignupList({ days, initialSigned, settings, labels, lang }: 
                   onClick={() => handleToggle(day.meal_date, type)}
                   aria-pressed={isSigned}
                   className={[
-                    'flex min-h-[76px] flex-col items-center justify-center gap-1 rounded-xl border px-2 py-3 text-sm transition',
+                    'flex min-h-[84px] flex-col items-center justify-center gap-1 rounded-[14px] border px-2 py-3 text-sm transition-all duration-200 active:scale-[0.97]',
                     !available
-                      ? 'cursor-not-allowed border-cocm-ink/10 bg-cocm-paper text-cocm-slate/60'
+                      ? 'cursor-not-allowed border-cocm-ink/10 bg-cocm-paper text-cocm-slate/50'
                       : isSigned
-                        ? 'border-cocm-red bg-cocm-red text-white shadow-card'
-                        : 'border-cocm-ink/15 bg-white text-cocm-ink hover:border-cocm-red/60',
+                        ? 'border-cocm-red bg-cocm-red text-white shadow-red-glow'
+                        : 'border-cocm-ink/15 bg-white text-cocm-ink hover:-translate-y-0.5 hover:border-cocm-red/60 hover:shadow-card-hover',
                   ].join(' ')}
                 >
-                  <span className="font-semibold">{mealLabel(type)}</span>
+                  <span className="font-semibold tracking-[-0.01em]">{mealLabel(type)}</span>
                   <span className={isSigned ? 'text-white/90' : 'text-cocm-slate'}>
                     {formatMoney(priceForMeal(settings, type), settings.currency)}
                     <span className="text-xs">/{labels.perPerson}</span>

@@ -133,7 +133,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
     type === 'breakfast' ? t.breakfast : type === 'lunch' ? t.lunch : t.dinner;
 
   const inputClass =
-    'rounded-xl border border-cocm-ink/15 bg-white px-3 py-2 text-sm text-cocm-ink focus:border-cocm-red focus:outline-none';
+    'rounded-[12px] border-[1.5px] border-cocm-ink/15 bg-white px-3 py-2 text-sm text-cocm-ink outline-none transition placeholder:text-cocm-ink/35 hover:border-cocm-ink/25 focus:border-cocm-red focus:ring-2 focus:ring-cocm-red/20';
 
   return (
     <AppShell title={t.manageTitle} eyebrow={t.manageEyebrow}>
@@ -152,7 +152,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
       <div className="grid gap-4 lg:grid-cols-2">
         <form
           action={updateMealPrices}
-          className="rounded-card border border-cocm-ink/10 bg-white p-5 shadow-card"
+          className="rounded-[20px] border border-cocm-ink/10 bg-white p-5 shadow-card md:p-6"
         >
           <h3 className="font-serif text-xl text-cocm-ink">{t.pricesTitle}</h3>
           <p className="mt-1 text-sm text-cocm-slate">{t.pricesDesc}</p>
@@ -180,7 +180,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
           </div>
           <button
             type="submit"
-            className="mt-4 rounded-xl bg-cocm-red px-4 py-2 text-sm font-semibold text-white hover:bg-cocm-red-dark"
+            className="mt-4 rounded-[12px] bg-cocm-red px-5 py-2.5 text-sm font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark active:scale-[0.98]"
           >
             {tc.save}
           </button>
@@ -188,7 +188,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
 
         <form
           action={updateTransferInfo}
-          className="rounded-card border border-cocm-ink/10 bg-white p-5 shadow-card"
+          className="rounded-[20px] border border-cocm-ink/10 bg-white p-5 shadow-card md:p-6"
         >
           <h3 className="font-serif text-xl text-cocm-ink">{t.transferEditTitle}</h3>
           <p className="mt-1 text-sm text-cocm-slate">{t.transferEditDesc}</p>
@@ -201,14 +201,14 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
           />
           <button
             type="submit"
-            className="mt-4 rounded-xl bg-cocm-red px-4 py-2 text-sm font-semibold text-white hover:bg-cocm-red-dark"
+            className="mt-4 rounded-[12px] bg-cocm-red px-5 py-2.5 text-sm font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark active:scale-[0.98]"
           >
             {tc.save}
           </button>
         </form>
       </div>
 
-      <div className="mt-4 rounded-card border border-cocm-ink/10 bg-white p-5 shadow-card">
+      <div className="mt-4 rounded-[20px] border border-cocm-ink/10 bg-white p-5 shadow-card md:p-6">
         <h3 className="font-serif text-xl text-cocm-ink">{t.daysTitle}</h3>
         <p className="mt-1 text-sm text-cocm-slate">{t.daysDesc}</p>
 
@@ -233,7 +233,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
           />
           <button
             type="submit"
-            className="rounded-xl bg-cocm-ink px-4 py-2 text-sm font-semibold text-white hover:bg-cocm-ink/90"
+            className="rounded-[12px] bg-cocm-ink px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-cocm-ink-light active:scale-[0.98]"
           >
             {t.addDay}
           </button>
@@ -289,7 +289,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
         </div>
       </div>
 
-      <div className="mt-4 rounded-card border border-cocm-ink/10 bg-white p-5 shadow-card">
+      <div className="mt-4 rounded-[20px] border border-cocm-ink/10 bg-white p-5 shadow-card md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="font-serif text-xl text-cocm-ink">{t.statsTitle}</h3>
@@ -308,7 +308,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
             />
             <button
               type="submit"
-              className="rounded-xl bg-cocm-ink px-3 py-2 text-sm font-semibold text-white hover:bg-cocm-ink/90"
+              className="rounded-[12px] bg-cocm-ink px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-cocm-ink-light active:scale-[0.98]"
             >
               {tc.confirm}
             </button>
@@ -331,7 +331,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
               </thead>
               <tbody>
                 {stats.map((row) => (
-                  <tr key={row.userId} className="border-b border-cocm-ink/5 last:border-0">
+                  <tr key={row.userId} className="border-b border-cocm-ink/5 transition-colors last:border-0 hover:bg-cocm-ink/[0.02]">
                     <td className="px-4 py-3 font-semibold text-cocm-ink">{row.name}</td>
                     <td className="px-4 py-3 text-cocm-slate">{row.breakfast}</td>
                     <td className="px-4 py-3 text-cocm-slate">{row.lunch}</td>
@@ -341,11 +341,11 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
                     </td>
                   </tr>
                 ))}
-                <tr className="font-semibold">
+                <tr className="bg-cocm-ink/[0.03] font-semibold">
                   <td className="px-4 py-3 text-cocm-ink" colSpan={4}>
                     {tc.total}
                   </td>
-                  <td className="px-4 py-3 text-right text-cocm-ink">
+                  <td className="px-4 py-3 text-right font-serif text-base text-cocm-ink">
                     {formatMoney(statsTotal, settings.currency)}
                   </td>
                 </tr>

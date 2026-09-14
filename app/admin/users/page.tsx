@@ -132,7 +132,7 @@ export default async function AdminUsersPage() {
         </p>
       ) : null}
 
-      <div className="overflow-x-auto rounded-card border border-cocm-ink/10 bg-white shadow-card">
+      <div className="overflow-x-auto rounded-[20px] border border-cocm-ink/10 bg-white shadow-card">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead>
             <tr className="border-b border-cocm-ink/10 text-xs uppercase tracking-[0.15em] text-cocm-slate">

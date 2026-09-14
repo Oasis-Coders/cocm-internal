@@ -73,11 +73,21 @@ export default async function DashboardPage() {
 
   return (
     <AppShell title={t.title} eyebrow={t.eyebrow}>
-      <div className="rounded-panel border border-cocm-ink/10 bg-white p-6 shadow-card md:p-8">
-        <h3 className="font-serif text-3xl tracking-tight text-cocm-ink">
-          {lang === 'zh' ? `你好，${firstName}` : `Hello, ${firstName}`}
-        </h3>
-        <p className="mt-3 max-w-2xl text-cocm-slate">{t.welcomeDesc}</p>
+      <div className="relative overflow-hidden rounded-[24px] bg-cocm-ink p-6 text-white shadow-panel md:p-8">
+        <div className="absolute inset-0" aria-hidden="true">
+          <div className="absolute -right-10 -top-16 h-48 w-48 rounded-full bg-cocm-red/25 blur-[32px]" />
+          <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-[#3f43a8] blur-[28px]" />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-br from-cocm-red/10 via-transparent to-transparent" aria-hidden="true" />
+        <div className="relative">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">
+            {t.eyebrow}
+          </p>
+          <h3 className="mt-2 font-serif text-3xl tracking-tight text-white">
+            {lang === 'zh' ? `你好，${firstName}` : `Hello, ${firstName}`}
+          </h3>
+          <p className="mt-3 max-w-2xl leading-relaxed text-white/70">{t.welcomeDesc}</p>
+        </div>
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3 md:gap-5">

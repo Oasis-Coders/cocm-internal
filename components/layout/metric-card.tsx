@@ -6,10 +6,13 @@ type MetricCardProps = {
 
 export function MetricCard({ label, value, helper }: MetricCardProps) {
   return (
-    <article className="border-cocm-ink/8 rounded-card border bg-white px-3 py-3 shadow-card transition-shadow hover:shadow-card-hover md:p-5">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-cocm-slate md:text-[11px] md:tracking-[0.2em]">{label}</p>
-      <p className="mt-1 font-serif text-2xl tracking-tight text-cocm-ink md:mt-4 md:text-4xl">{value}</p>
-      <p className="mt-1 hidden text-sm text-cocm-slate md:mt-3 md:block">{helper}</p>
+    <article className="card-hover rounded-[20px] border border-cocm-ink/10 bg-white p-5 shadow-card md:p-6">
+      <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-cocm-slate">
+        <span className="h-1 w-1 rounded-full bg-cocm-red" aria-hidden="true" />
+        {label}
+      </p>
+      <p className="mt-3 font-serif text-4xl tracking-tight text-cocm-ink">{value}</p>
+      <p className="mt-2 text-sm leading-relaxed text-cocm-slate">{helper}</p>
     </article>
   );
 }

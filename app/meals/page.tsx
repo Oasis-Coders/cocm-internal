@@ -109,23 +109,31 @@ export default async function MealsPage() {
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-card border border-cocm-ink/10 bg-white p-5 shadow-card">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cocm-slate">
-                {t.monthTotal}
-              </p>
-              <p className="mt-2 font-serif text-4xl text-cocm-ink">
-                {formatMoney(monthTotal, data.settings.currency)}
-              </p>
-              <p className="mt-2 text-sm text-cocm-slate">
-                {monthSignups.length} {t.count} · {year}-{String(month).padStart(2, '0')}
-              </p>
+            <div className="relative overflow-hidden rounded-[20px] bg-cocm-ink p-5 text-white shadow-card md:p-6">
+              <div className="absolute inset-0" aria-hidden="true">
+                <div className="absolute -right-8 -top-12 h-36 w-36 rounded-full bg-cocm-red/25 blur-[28px]" />
+                <div className="absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-[#3f43a8] blur-[24px]" />
+              </div>
+              <div className="relative">
+                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">
+                  <span className="h-1 w-1 rounded-full bg-cocm-red" aria-hidden="true" />
+                  {t.monthTotal}
+                </p>
+                <p className="mt-2 font-serif text-4xl tracking-tight text-white md:text-5xl">
+                  {formatMoney(monthTotal, data.settings.currency)}
+                </p>
+                <p className="mt-2 text-sm text-white/60">
+                  {monthSignups.length} {t.count} · {year}-{String(month).padStart(2, '0')}
+                </p>
+              </div>
             </div>
-            <div className="rounded-card border border-cocm-ink/10 bg-white p-5 shadow-card">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cocm-slate">
+            <div className="rounded-[20px] border border-cocm-ink/10 bg-white p-5 shadow-card md:p-6">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-cocm-slate">
+                <span className="h-1 w-1 rounded-full bg-cocm-red" aria-hidden="true" />
                 {t.transferTitle}
               </p>
               {data.settings.transfer_info ? (
-                <p className="mt-2 whitespace-pre-wrap text-sm text-cocm-ink">
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-cocm-ink">
                   {data.settings.transfer_info}
                 </p>
               ) : (
@@ -138,16 +146,17 @@ export default async function MealsPage() {
             <div className="mt-4 flex justify-end">
               <Link
                 href="/meals/manage"
-                className="rounded-xl bg-cocm-ink px-4 py-2 text-sm font-semibold text-white hover:bg-cocm-ink/90"
+                className="inline-flex items-center gap-1.5 rounded-[12px] bg-cocm-red px-4 py-2.5 text-sm font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark"
               >
                 {t.manageMeals}
+                <span aria-hidden="true">→</span>
               </Link>
             </div>
           ) : null}
 
-          <div className="mt-6">
-            <div className="mb-3 flex items-baseline justify-between">
-              <h3 className="font-serif text-2xl text-cocm-ink">{t.upcomingTitle}</h3>
+          <div className="mt-8">
+            <div className="mb-4 flex items-baseline justify-between">
+              <h3 className="font-serif text-2xl tracking-tight text-cocm-ink">{t.upcomingTitle}</h3>
               <p className="text-sm text-cocm-slate">{t.tapToToggle}</p>
             </div>
             {data.days.length === 0 ? (

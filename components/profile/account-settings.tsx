@@ -111,11 +111,11 @@ export async function AccountSettings({ searchParams }: AccountSettingsProps) {
         : null;
 
   const inputClassName =
-    'mt-3 w-full rounded-2xl border border-cocm-ink/15 px-4 py-3 outline-none transition focus:border-cocm-ink/40';
+    'mt-2 w-full rounded-[12px] border-[1.5px] border-cocm-ink/15 bg-white px-4 py-3 text-[15px] text-cocm-ink outline-none transition placeholder:text-cocm-ink/35 hover:border-cocm-ink/25 focus:border-cocm-red focus:ring-2 focus:ring-cocm-red/20';
 
   return (
     <>
-      <article className="rounded-card border border-cocm-ink/10 bg-white p-6 shadow-card">
+      <article className="rounded-[20px] border border-cocm-ink/10 bg-white p-6 shadow-card md:p-7">
         <p className="text-xs uppercase tracking-[0.25em] text-cocm-slate">{t.eyebrow}</p>
         <h3 className="mt-3 font-serif text-2xl text-cocm-ink">{displayName}</h3>
         <dl className="mt-6 grid gap-4 text-sm text-cocm-slate md:grid-cols-3">
@@ -131,7 +131,7 @@ export async function AccountSettings({ searchParams }: AccountSettingsProps) {
       </article>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
-        <article className="rounded-card border border-cocm-ink/10 bg-white p-6 shadow-card">
+        <article className="rounded-[20px] border border-cocm-ink/10 bg-white p-6 shadow-card md:p-7">
           <p className="text-xs uppercase tracking-[0.25em] text-cocm-slate">{t.displayName}</p>
           <h3 className="mt-3 font-serif text-2xl text-cocm-ink">{t.displayName}</h3>
 
@@ -160,7 +160,7 @@ export async function AccountSettings({ searchParams }: AccountSettingsProps) {
 
               <button
                 type="submit"
-                className="rounded-xl bg-cocm-red px-5 py-3 font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark"
+                className="rounded-[12px] bg-cocm-red px-5 py-3 font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark active:scale-[0.98]"
               >
                 {t.saveProfile}
               </button>
@@ -172,7 +172,7 @@ export async function AccountSettings({ searchParams }: AccountSettingsProps) {
           )}
         </article>
 
-        <article className="rounded-card border border-cocm-ink/10 bg-white p-6 shadow-card">
+        <article className="rounded-[20px] border border-cocm-ink/10 bg-white p-6 shadow-card md:p-7">
           <p className="text-xs uppercase tracking-[0.25em] text-cocm-slate">{t.email}</p>
           <h3 className="mt-3 font-serif text-2xl text-cocm-ink">{t.saveCredentials}</h3>
 
@@ -215,7 +215,7 @@ export async function AccountSettings({ searchParams }: AccountSettingsProps) {
 
               <button
                 type="submit"
-                className="rounded-xl bg-cocm-red px-5 py-3 font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark"
+                className="rounded-[12px] bg-cocm-red px-5 py-3 font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark active:scale-[0.98]"
               >
                 {t.saveCredentials}
               </button>

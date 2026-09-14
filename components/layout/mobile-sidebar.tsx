@@ -28,36 +28,64 @@ export function MobileSidebar({ children }: { children: React.ReactNode }) {
 
   const close = useCallback(() => setIsOpen(false), []);
 
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen]);
+
   return (
     <>
       {/* Mobile hamburger — only visible below lg */}
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
-        className="fixed left-4 top-4 z-50 flex h-11 w-11 items-center justify-center rounded-xl bg-cocm-ink text-lg text-white shadow-card transition hover:bg-cocm-ink-light lg:hidden"
+        aria-expanded={isOpen}
+        aria-controls="mobile-drawer"
+        className="fixed left-4 top-4 z-50 flex h-11 w-11 items-center justify-center rounded-[12px] bg-cocm-ink text-white shadow-lg transition hover:bg-cocm-ink-light lg:hidden"
         aria-label={isOpen ? 'Close navigation' : 'Open navigation'}
       >
-        {isOpen ? '✕' : '☰'}
+        {isOpen ? (
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <path d="M4 4l10 10M14 4L4 14" strokeLinecap="round" />
+          </svg>
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+            <path d="M3 6h14M3 10h14M3 14h14" strokeLinecap="round" />
+          </svg>
+        )}
       </button>
 
-      {/* Backdrop overlay */}
-      <div
-        className={cn(
-          'fixed inset-0 z-40 bg-cocm-ink/40 backdrop-blur-sm transition-opacity lg:hidden',
-          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
-        )}
-        onClick={close}
-        aria-hidden="true"
-      />
+      {/* Mobile drawer */}
+      <div className={cn('fixed inset-0 z-40 lg:hidden', isOpen ? 'visible' : 'invisible')}>
+        <button
+          type="button"
+          aria-label="Close navigation"
+          aria-hidden={!isOpen}
+          tabIndex={isOpen ? 0 : -1}
+          onClick={close}
+          className={cn(
+            'absolute inset-0 cursor-default bg-cocm-ink/40 backdrop-blur-sm transition-opacity',
+            isOpen ? 'opacity-100' : 'opacity-0'
+          )}
+        />
+        <div
+          id="mobile-drawer"
+          className={cn(
+            'absolute inset-y-0 left-0 w-[280px] max-w-[85vw] bg-cocm-ink overscroll-contain transition-transform duration-300 ease-in-out',
+            isOpen ? 'translate-x-0' : '-translate-x-full'
+          )}
+        >
+          {children}
+        </div>
+      </div>
 
-      {/* Sidebar drawer (mobile) / static aside (desktop) */}
-      <aside
-        className={cn(
-          'border-cocm-ink/8 fixed inset-y-0 left-0 z-40 flex w-80 max-w-[85vw] flex-col overflow-y-auto rounded-r-panel border-r bg-white p-5 shadow-panel backdrop-blur transition-transform duration-300 ease-in-out',
-          isOpen ? 'translate-x-0' : '-translate-x-full',
-          'lg:static lg:sticky lg:top-4 lg:z-auto lg:max-h-[calc(100vh-2rem)] lg:translate-x-0 lg:overflow-hidden lg:rounded-panel lg:border lg:bg-white lg:shadow-card'
-        )}
-      >
+      {/* Desktop floating sidebar — only visible at lg+ */}
+      <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-[264px] shrink-0 lg:block">
         {children}
       </aside>
     </>

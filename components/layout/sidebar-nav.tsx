@@ -42,7 +42,7 @@ export function SidebarNav({ items }: { items: LocalizedNavItem[] }) {
       onScroll={(event) => {
         window.sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(event.currentTarget.scrollTop));
       }}
-      className="space-y-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1"
+      className="flex flex-col gap-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1"
     >
       {items.map((item) => {
         const isActive = isActivePath(pathname, item.href);
@@ -61,17 +61,25 @@ export function SidebarNav({ items }: { items: LocalizedNavItem[] }) {
             }}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
-              'block rounded-xl border border-transparent px-3 py-2.5 transition-all hover:border-cocm-ink/15 hover:bg-cocm-sand/40',
-              isHighlighted && 'border-cocm-ink/10 bg-white shadow-sm'
+              'group relative flex items-center gap-3 rounded-[12px] px-3.5 py-3 text-[13.5px] font-medium transition-all duration-200',
+              isHighlighted
+                ? 'bg-white font-semibold text-cocm-ink shadow-[0_2px_12px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]'
+                : 'text-white/70 hover:bg-white/[0.08] hover:text-white'
             )}
           >
-            <span className="flex items-center gap-2 text-sm font-semibold text-cocm-ink">
-              {item.label}
-              {isPending && (
-                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-cocm-red/60" />
+            <span
+              className={cn(
+                'h-[6px] w-[6px] shrink-0 rounded-full transition-all duration-200',
+                isHighlighted
+                  ? 'bg-cocm-red shadow-[0_0_8px_rgba(229,68,76,0.5)]'
+                  : 'bg-white/30 group-hover:scale-110 group-hover:bg-white/60'
               )}
-            </span>
-            <span className="block text-xs text-cocm-slate">{item.description}</span>
+            />
+            <span className="flex-1 tracking-[-0.01em]">{item.label}</span>
+            {isPending && !isActive ? (
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cocm-red/70" />
+            ) : null}
+            {isActive ? <span className="h-1 w-1 animate-pulse rounded-full bg-cocm-red" /> : null}
           </Link>
         );
       })}

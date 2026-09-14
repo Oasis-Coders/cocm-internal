@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -14,18 +14,56 @@
 
 html {
   scroll-behavior: smooth;
+  touch-action: manipulation;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Inter', 'Noto Sans SC', system-ui, -apple-system, 'Segoe UI', sans-serif;
   background-color: #faf7f0;
   color: #2d2f92;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: rgba(45, 47, 146, 0.15);
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+::selection {
+  background: rgba(229, 68, 76, 0.18);
+}
+
+/* ── Shared card utilities ── */
+.card-hover {
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+.card-hover:hover {
+  box-shadow: rgba(31, 33, 71, 0.08) 0px 4px 16px;
+  transform: translateY(-2px);
+}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(45, 47, 146, 0.15);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(45, 47, 146, 0.25);
 }
 
 /* ═══════════════════════════════════════════════════════════════
