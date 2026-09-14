@@ -78,7 +78,7 @@ export function AuthShell({ lang, title, subtitle, children }: AuthShellProps) {
       </div>
 
       {/* Right — form column */}
-      <div className="flex flex-1 items-center justify-center bg-cocm-paper p-6 lg:p-12">
+      <div className="auth-panel-bg flex flex-1 items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-[400px]">
           <div className="mb-8 flex items-center justify-center gap-2 lg:hidden">
             <Image

@@ -50,6 +50,15 @@ a {
   transform: translateY(-2px);
 }
 
+/* ── Auth form panel background: soft brand-wash gradient, not a flat color ── */
+.auth-panel-bg {
+  background:
+    radial-gradient(640px 420px at 88% 8%, rgba(45, 47, 146, 0.10), transparent 62%),
+    radial-gradient(560px 420px at 6% 94%, rgba(229, 68, 76, 0.07), transparent 60%),
+    radial-gradient(420px 300px at 50% 50%, rgba(255, 255, 255, 0.55), transparent 70%),
+    linear-gradient(165deg, #eef0fd 0%, #f7f8ff 48%, #eceffa 100%);
+}
+
 /* ── Custom scrollbar ── */
 ::-webkit-scrollbar {
   width: 8px;
