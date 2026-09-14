@@ -59,7 +59,7 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
       >
         {lang === 'zh' ? '跳到主内容' : 'Skip to main content'}
       </a>
-      <div className="mx-auto flex max-w-[1600px] lg:gap-6 lg:px-6 lg:py-4">
+      <div className="mx-auto flex w-full max-w-[1440px] lg:gap-6 lg:px-6 lg:py-6">
         <MobileSidebar>
           <SidebarPanel
             items={filteredNav}
@@ -73,19 +73,25 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
         </MobileSidebar>
 
         <main id="main-content" className="min-w-0 flex-1">
-          <div className="sticky top-0 z-10 -mt-px border-b border-cocm-ink/5 bg-white/70 backdrop-blur-xl lg:rounded-t-[20px] lg:border lg:border-cocm-ink/5">
-            <div className="flex items-center justify-between py-4 pl-16 pr-4 lg:px-8 lg:py-6 lg:pl-8">
+          <div className="sticky top-0 z-10 border-b border-cocm-ink/5 bg-white/70 backdrop-blur-xl lg:top-6 lg:rounded-[20px] lg:border lg:border-white/60 lg:shadow-[0_10px_36px_rgba(31,33,71,0.08)]">
+            <div className="flex items-center justify-between py-4 pl-16 pr-4 lg:px-8 lg:py-5 lg:pl-8">
               <div className="min-w-0 flex-1">
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-cocm-red">
+                <p className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cocm-red">
+                  <span
+                    className="h-[3px] w-6 rounded-full bg-gradient-to-r from-cocm-red to-cocm-red/10"
+                    aria-hidden="true"
+                  />
                   {eyebrow}
                 </p>
-                <h1 className="font-serif text-[24px] leading-none tracking-tight text-cocm-ink lg:text-[28px]">
+                <h1 className="font-serif text-[26px] leading-none tracking-tight text-cocm-ink lg:text-[32px]">
                   {title}
                 </h1>
               </div>
             </div>
           </div>
-          <div className="px-4 py-6 lg:px-8 lg:py-8">{children}</div>
+          <div className="px-4 py-6 lg:px-8 lg:py-8">
+            <div className="mx-auto w-full max-w-[1200px]">{children}</div>
+          </div>
         </main>
       </div>
     </div>

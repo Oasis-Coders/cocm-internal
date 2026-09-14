@@ -85,7 +85,7 @@ export function MobileSidebar({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Desktop floating sidebar — only visible at lg+ */}
-      <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-[264px] shrink-0 lg:block">
+      <aside className="sticky top-6 hidden h-[calc(100vh-3rem)] w-[272px] shrink-0 lg:block">
         {children}
       </aside>
     </>

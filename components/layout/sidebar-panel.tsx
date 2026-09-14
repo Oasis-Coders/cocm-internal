@@ -32,7 +32,7 @@ export function SidebarPanel({
   return (
     <div
       className={cn(
-        'relative flex h-full flex-col overflow-hidden bg-cocm-ink text-white shadow-[0_20px_60px_rgba(45,47,146,0.25)] lg:rounded-[24px]',
+        'relative flex h-full flex-col overflow-hidden bg-[linear-gradient(180deg,#363a9e_0%,#2d2f92_42%,#22235c_100%)] text-white shadow-[0_20px_60px_rgba(45,47,146,0.25)] lg:rounded-[24px]',
         className
       )}
     >
