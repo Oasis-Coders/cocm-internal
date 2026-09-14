@@ -59,7 +59,7 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
       >
         {lang === 'zh' ? '跳到主内容' : 'Skip to main content'}
       </a>
-      <div className="mx-auto flex w-full max-w-[1440px] lg:gap-6 lg:px-6 lg:py-6">
+      <div className="mx-auto flex w-full max-w-[1320px] lg:gap-6 lg:px-6 lg:py-6">
         <MobileSidebar>
           <SidebarPanel
             items={filteredNav}
@@ -90,7 +90,7 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
             </div>
           </div>
           <div className="px-4 py-6 lg:px-8 lg:py-8">
-            <div className="mx-auto w-full max-w-[1200px]">{children}</div>
+            <div className="mx-auto w-full max-w-[1024px]">{children}</div>
           </div>
         </main>
       </div>
