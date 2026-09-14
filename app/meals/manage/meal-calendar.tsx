@@ -74,6 +74,12 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
   const dragAnchor = useRef<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
+  // Touch selection: tap selects a day, sideways swipe extends a range.
+  // `touch-action: pan-y` on the grid keeps vertical page scroll working.
+  const touchAnchor = useRef<string | null>(null);
+  const lastTouchEnd = useRef(0);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+
   const today = useMemo(todayIso, []);
   const dayMap = useMemo(() => new Map(days.map((d) => [d.meal_date, d])), [days]);
 
@@ -158,6 +164,8 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
   };
 
   const onDayDown = (date: string) => {
+    // Ignore the synthetic mouse events browsers fire right after a touch.
+    if (Date.now() - lastTouchEnd.current < 600) return;
     dragAnchor.current = date;
     setDragging(true);
     setSelection({ start: date, end: date });
@@ -166,6 +174,41 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
     if (!dragging || !dragAnchor.current) return;
     const a = dragAnchor.current;
     setSelection({ start: a <= date ? a : date, end: a <= date ? date : a });
+  };
+
+  const scrollEditorIntoView = () => {
+    if (typeof window === 'undefined') return;
+    if (!window.matchMedia?.('(pointer: coarse)').matches) return;
+    requestAnimationFrame(() => {
+      editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  };
+
+  const onDayTouchStart = (date: string) => {
+    touchAnchor.current = date;
+    setSelection({ start: date, end: date });
+  };
+  const onGridTouchMove = (e: React.TouchEvent) => {
+    if (!touchAnchor.current) return;
+    const t = e.touches[0];
+    if (!t) return;
+    const dayEl = document.elementFromPoint(t.clientX, t.clientY)?.closest('[data-day]');
+    const date = dayEl?.getAttribute('data-day');
+    if (!date) return;
+    const a = touchAnchor.current;
+    setSelection({ start: a <= date ? a : date, end: a <= date ? date : a });
+  };
+  const onGridTouchEnd = () => {
+    if (!touchAnchor.current) return;
+    touchAnchor.current = null;
+    lastTouchEnd.current = Date.now();
+    scrollEditorIntoView();
+  };
+
+  const selectMonth = () => {
+    const dim = new Date(viewYear, viewMonth, 0).getDate();
+    setSelection({ start: toIso(viewYear, viewMonth, 1), end: toIso(viewYear, viewMonth, dim) });
+    scrollEditorIntoView();
   };
 
   const runAction = (fn: () => Promise<{ ok: boolean }>) => {
@@ -217,12 +260,23 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
           <button type="button" onClick={goToday} className={navBtn}>
             {t.today}
           </button>
+          <button type="button" onClick={selectMonth} className={navBtn}>
+            {t.selectMonth}
+          </button>
         </div>
       </div>
 
       <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Calendar grid */}
-        <div className="select-none">
+        <div
+          className="touch-pan-y select-none"
+          onTouchMove={onGridTouchMove}
+          onTouchEnd={onGridTouchEnd}
+          onTouchCancel={() => {
+            touchAnchor.current = null;
+            lastTouchEnd.current = Date.now();
+          }}
+        >
           <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold uppercase tracking-[0.1em] text-cocm-slate/70">
             {weekdays.map((w) => (
               <div key={w} className="py-1.5">{w}</div>
@@ -241,8 +295,10 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
                 <button
                   key={date}
                   type="button"
+                  data-day={date}
                   onMouseDown={() => onDayDown(date)}
                   onMouseEnter={() => onDayEnter(date)}
+                  onTouchStart={() => onDayTouchStart(date)}
                   className={`relative flex min-h-[64px] flex-col items-center justify-start gap-1 rounded-[12px] border px-1 pb-1.5 pt-2 text-sm transition md:min-h-[76px] ${
                     isEndpoint
                       ? 'border-cocm-blue bg-cocm-blue text-white shadow-card'
@@ -312,7 +368,10 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
         </div>
 
         {/* Editor panel */}
-        <div className="rounded-[16px] border border-cocm-ink/10 bg-cocm-blue/[0.04] p-4 md:p-5">
+        <div
+          ref={editorRef}
+          className="scroll-mt-24 rounded-[16px] border border-cocm-ink/10 bg-cocm-blue/[0.04] p-4 md:p-5"
+        >
           {!selection ? (
             <div className="flex h-full min-h-[220px] flex-col items-center justify-center text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cocm-blue/10 text-xl text-cocm-blue">
