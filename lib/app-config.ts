@@ -22,7 +22,7 @@ export type LocalizedNavItem = {
 export const navItems: NavItem[] = [
   {
     href: '/dashboard',
-    label: { zh: '仪表盘', en: 'Dashboard' },
+    label: { zh: '总览', en: 'Dashboard' },
     description: { zh: '总览', en: 'Operational overview' },
   },
   {

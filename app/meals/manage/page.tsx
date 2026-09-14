@@ -9,7 +9,6 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { translations, type Lang } from '@/lib/i18n/translations';
 import {
   currentYearMonth,
-  formatMoney,
   monthBounds,
   type MealDay,
   type MealSettings,
@@ -19,8 +18,10 @@ import {
 import {
   updateMealPrices,
   updateTransferInfo,
+  type MealPayment,
 } from '@/app/meals/manage/actions';
 import { MealCalendar } from '@/app/meals/manage/meal-calendar';
+import { SettlementPanel, type SettlementRow } from '@/app/meals/manage/settlement-panel';
 
 type ManagePageProps = {
   searchParams: Promise<{ month?: string; saved?: string; error?: string }>;
@@ -33,6 +34,8 @@ type StatsRow = {
   lunch: number;
   dinner: number;
   total: number;
+  paid: number;
+  adjusted: number;
 };
 
 function parseMonthParam(value: string | undefined): { year: number; month: number } {
@@ -71,7 +74,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
   const { start, end } = monthBounds(year, month);
   const monthParam = `${year}-${String(month).padStart(2, '0')}`;
 
-  const [{ data: settingsRow }, { data: dayRows }, { data: statRows }] = await Promise.all([
+  const [{ data: settingsRow }, { data: dayRows }, { data: statRows }, { data: paymentRows }] = await Promise.all([
     supabase.from('meal_settings').select('*').eq('id', 1).maybeSingle(),
     supabase
       .from('meal_days')
@@ -83,6 +86,11 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
       .select('meal_type, price, user_id')
       .gte('meal_date', start)
       .lt('meal_date', end),
+    supabase
+      .from('meal_payments')
+      .select('id, user_id, period, kind, amount, note, recorded_by, created_at')
+      .eq('period', monthParam)
+      .order('created_at', { ascending: false }),
   ]);
 
   // Per-day signup counts for the calendar (±6 months around today).
@@ -104,10 +112,14 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
   }
 
   // meal_signups.user_id references auth.users, so join profiles separately.
+  // Include users who have payments but no signups this month (credit balances).
   const signupUserIds = [...new Set(((statRows ?? []) as Array<{ user_id: string }>).map((r) => r.user_id))];
+  const paymentList = (paymentRows ?? []) as MealPayment[];
+  const paymentUserIds = [...new Set(paymentList.map((p) => p.user_id))];
+  const allUserIds = [...new Set([...signupUserIds, ...paymentUserIds])];
   let statProfiles: Array<{ id: string; display_name: string | null; email: string | null }> = [];
-  if (signupUserIds.length > 0) {
-    const { data } = await supabase.from('profiles').select('id, display_name, email').in('id', signupUserIds);
+  if (allUserIds.length > 0) {
+    const { data } = await supabase.from('profiles').select('id, display_name, email').in('id', allUserIds);
     statProfiles = (data ?? []) as typeof statProfiles;
   }
   const profileById = new Map(statProfiles.map((p) => [p.id, p]));
@@ -127,12 +139,14 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
     price: number | string;
     user_id: string;
   }>;
+  const nameFor = (userId: string) => {
+    const profile = profileById.get(userId);
+    return profile?.display_name || profile?.email || userId.slice(0, 8);
+  };
   for (const row of statList) {
-    const profile = profileById.get(row.user_id);
-    const name = profile?.display_name || profile?.email || row.user_id.slice(0, 8);
     let entry = statsByUser.get(row.user_id);
     if (!entry) {
-      entry = { userId: row.user_id, name, breakfast: 0, lunch: 0, dinner: 0, total: 0 };
+      entry = { userId: row.user_id, name: nameFor(row.user_id), breakfast: 0, lunch: 0, dinner: 0, total: 0, paid: 0, adjusted: 0 };
       statsByUser.set(row.user_id, entry);
     }
     const price = Number(row.price) || 0;
@@ -141,8 +155,33 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
     else entry.dinner += 1;
     entry.total += price;
   }
-  const stats = [...statsByUser.values()].sort((a, b) => b.total - a.total);
-  const statsTotal = stats.reduce((sum, s) => sum + s.total, 0);
+  // Fold payments/adjustments into each person's row; include payers with no signups.
+  const paymentsByUser: Record<string, MealPayment[]> = {};
+  for (const p of paymentList) {
+    (paymentsByUser[p.user_id] ??= []).push(p);
+    let entry = statsByUser.get(p.user_id);
+    if (!entry) {
+      entry = { userId: p.user_id, name: nameFor(p.user_id), breakfast: 0, lunch: 0, dinner: 0, total: 0, paid: 0, adjusted: 0 };
+      statsByUser.set(p.user_id, entry);
+    }
+    const amount = Number(p.amount) || 0;
+    if (p.kind === 'payment') entry.paid += amount;
+    else entry.adjusted += amount;
+  }
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const settlementRows: SettlementRow[] = [...statsByUser.values()]
+    .map((s) => ({
+      userId: s.userId,
+      name: s.name,
+      breakfast: s.breakfast,
+      lunch: s.lunch,
+      dinner: s.dinner,
+      owed: round2(s.total),
+      paid: round2(s.paid),
+      adjusted: round2(s.adjusted),
+      outstanding: round2(s.total - s.paid - s.adjusted),
+    }))
+    .sort((a, b) => b.outstanding - a.outstanding || b.owed - a.owed);
 
   const mealLabel = (type: MealType) =>
     type === 'breakfast' ? t.breakfast : type === 'lunch' ? t.lunch : t.dinner;
@@ -259,42 +298,19 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
           </form>
         </div>
 
-        {stats.length === 0 ? (
+        {settlementRows.length === 0 ? (
           <p className="mt-4 text-sm text-cocm-slate">{t.noSignups}</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[560px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-cocm-ink/10 text-xs uppercase tracking-[0.15em] text-cocm-slate">
-                  <th className="px-4 py-3 font-semibold">{t.name}</th>
-                  <th className="px-4 py-3 font-semibold">{t.breakfast}</th>
-                  <th className="px-4 py-3 font-semibold">{t.lunch}</th>
-                  <th className="px-4 py-3 font-semibold">{t.dinner}</th>
-                  <th className="px-4 py-3 text-right font-semibold">{t.amount}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.map((row) => (
-                  <tr key={row.userId} className="border-b border-cocm-ink/5 transition-colors last:border-0 hover:bg-cocm-ink/[0.02]">
-                    <td className="px-4 py-3 font-semibold text-cocm-ink">{row.name}</td>
-                    <td className="px-4 py-3 text-cocm-slate">{row.breakfast}</td>
-                    <td className="px-4 py-3 text-cocm-slate">{row.lunch}</td>
-                    <td className="px-4 py-3 text-cocm-slate">{row.dinner}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-cocm-ink">
-                      {formatMoney(row.total, settings.currency)}
-                    </td>
-                  </tr>
-                ))}
-                <tr className="bg-cocm-ink/[0.03] font-semibold">
-                  <td className="px-4 py-3 text-cocm-ink" colSpan={4}>
-                    {tc.total}
-                  </td>
-                  <td className="px-4 py-3 text-right font-serif text-base text-cocm-ink">
-                    {formatMoney(statsTotal, settings.currency)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="mt-4">
+            <SettlementPanel
+              rows={settlementRows}
+              paymentsByUser={paymentsByUser}
+              currency={settings.currency}
+              period={monthParam}
+              t={t}
+              tc={tc}
+              lang={lang}
+            />
           </div>
         )}
       </div>

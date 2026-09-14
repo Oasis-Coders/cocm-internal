@@ -22,6 +22,7 @@ type PageData = {
   settings: MealSettings;
   days: MealDay[];
   signups: MealSignup[];
+  paidThisMonth: number;
   ready: boolean;
 };
 
@@ -30,6 +31,7 @@ async function loadPageData(userId: string): Promise<PageData> {
     settings: defaultMealSettings,
     days: [],
     signups: [],
+    paidThisMonth: 0,
     ready: false,
   };
 
@@ -41,7 +43,8 @@ async function loadPageData(userId: string): Promise<PageData> {
     const { start } = monthBounds(year, month);
     const today = todayIso();
 
-    const [{ data: settingsRow }, { data: dayRows }, { data: signupRows }] = await Promise.all([
+    const period = `${year}-${String(month).padStart(2, '0')}`;
+    const [{ data: settingsRow }, { data: dayRows }, { data: signupRows }, { data: paymentRows }] = await Promise.all([
       supabase.from('meal_settings').select('*').eq('id', 1).maybeSingle(),
       supabase
         .from('meal_days')
@@ -55,9 +58,19 @@ async function loadPageData(userId: string): Promise<PageData> {
         .eq('user_id', userId)
         .gte('meal_date', start)
         .order('meal_date', { ascending: true }),
+      supabase
+        .from('meal_payments')
+        .select('amount')
+        .eq('user_id', userId)
+        .eq('period', period),
     ]);
 
     if (!dayRows || !signupRows) return fallback;
+
+    const paidThisMonth = ((paymentRows ?? []) as Array<{ amount: number | string }>).reduce(
+      (sum, r) => sum + (Number(r.amount) || 0),
+      0
+    );
 
     return {
       settings: {
@@ -72,6 +85,7 @@ async function loadPageData(userId: string): Promise<PageData> {
         ...s,
         price: Number(s.price) || 0,
       })),
+      paidThisMonth: Math.round(paidThisMonth * 100) / 100,
       ready: true,
     };
   } catch {
@@ -99,6 +113,7 @@ export default async function MealsPage() {
 
   const monthSignups = data.signups.filter((s) => s.meal_date >= start && s.meal_date < end);
   const monthTotal = monthSignups.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
+  const monthOutstanding = Math.round((monthTotal - data.paidThisMonth) * 100) / 100;
   const signedKeys = data.signups.map((s) => `${s.meal_date}|${s.meal_type}`);
   const isAdmin = session.role === 'admin' || session.role === 'super_admin';
 
@@ -120,10 +135,14 @@ export default async function MealsPage() {
                   {t.monthTotal}
                 </p>
                 <p className="mt-2 font-serif text-4xl tracking-tight text-white md:text-5xl">
-                  {formatMoney(monthTotal, data.settings.currency)}
+                  {formatMoney(monthOutstanding, data.settings.currency)}
                 </p>
                 <p className="mt-2 text-sm text-white/60">
-                  {monthSignups.length} {t.count} · {year}-{String(month).padStart(2, '0')}
+                  {t.outstanding} · {monthSignups.length} {t.count}
+                </p>
+                <p className="mt-1 text-xs text-white/45">
+                  {t.owed} {formatMoney(monthTotal, data.settings.currency)} · {t.paid}{' '}
+                  {formatMoney(data.paidThisMonth, data.settings.currency)}
                 </p>
               </div>
             </div>

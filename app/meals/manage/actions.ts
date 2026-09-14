@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 
 import { getSession } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import type { MealType } from '@/lib/meals';
+import { monthBounds, type MealType } from '@/lib/meals';
 
 const validMealTypes: MealType[] = ['breakfast', 'lunch', 'dinner'];
 
@@ -275,4 +275,190 @@ export async function removeMealDayRange(input: {
   revalidatePath('/meals/manage');
   revalidatePath('/meals');
   return { ok: true, count: count ?? 0 };
+}
+
+// ── Meal payments: record receipts & adjust balances ──
+
+export type PaymentKind = 'payment' | 'adjustment';
+
+export type MealPaymentInput = {
+  userId: string;
+  /** 'YYYY-MM' settlement period. */
+  period: string;
+  kind: PaymentKind;
+  /** > 0 for payments; signed (+waiver / −correction) for adjustments. */
+  amount: number;
+  note: string | null;
+};
+
+export type MealPayment = {
+  id: string;
+  user_id: string;
+  period: string;
+  kind: PaymentKind;
+  amount: number;
+  note: string | null;
+  recorded_by: string | null;
+  created_at: string;
+};
+
+function isValidPeriod(value: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+}
+
+function isValidUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+function parseMoney(value: number | string | null): number | null {
+  if (value === null || value === undefined) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  const rounded = Math.round(n * 100) / 100;
+  if (rounded === 0 || Math.abs(rounded) > 100000) return null;
+  return rounded;
+}
+
+/** Record money received from a member (reduces their outstanding balance). */
+export async function recordMealPayment(
+  input: MealPaymentInput
+): Promise<{ ok: boolean; error?: string }> {
+  const { session, supabase } = await requireMealAdmin();
+
+  if (!isValidUuid(input.userId) || !isValidPeriod(input.period)) {
+    return { ok: false, error: 'invalid-input' };
+  }
+  const amount = parseMoney(input.amount);
+  if (amount === null || amount <= 0) return { ok: false, error: 'invalid-amount' };
+
+  const { error } = await supabase.from('meal_payments').insert({
+    user_id: input.userId,
+    period: input.period,
+    kind: 'payment',
+    amount,
+    note: sanitizeNote(input.note),
+    recorded_by: session.userId,
+  });
+  if (error) return { ok: false, error: 'save-failed' };
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals');
+  return { ok: true };
+}
+
+/**
+ * Manual balance correction. Positive amount = waiver/discount (reduces what
+ * they owe); negative amount = undercharge correction (increases what they owe).
+ */
+export async function adjustMealBalance(
+  input: MealPaymentInput
+): Promise<{ ok: boolean; error?: string }> {
+  const { session, supabase } = await requireMealAdmin();
+
+  if (!isValidUuid(input.userId) || !isValidPeriod(input.period)) {
+    return { ok: false, error: 'invalid-input' };
+  }
+  const amount = parseMoney(input.amount);
+  if (amount === null) return { ok: false, error: 'invalid-amount' };
+
+  const { error } = await supabase.from('meal_payments').insert({
+    user_id: input.userId,
+    period: input.period,
+    kind: 'adjustment',
+    amount,
+    note: sanitizeNote(input.note),
+    recorded_by: session.userId,
+  });
+  if (error) return { ok: false, error: 'save-failed' };
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals');
+  return { ok: true };
+}
+
+async function outstandingFor(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>,
+  userId: string,
+  period: string
+): Promise<number | null> {
+  const year = Number(period.slice(0, 4));
+  const month = Number(period.slice(5, 7));
+  const { start, end } = monthBounds(year, month);
+
+  const [{ data: signupRows }, { data: paymentRows }] = await Promise.all([
+    supabase
+      .from('meal_signups')
+      .select('price')
+      .eq('user_id', userId)
+      .gte('meal_date', start)
+      .lt('meal_date', end),
+    supabase.from('meal_payments').select('amount').eq('user_id', userId).eq('period', period),
+  ]);
+
+  const owed = ((signupRows ?? []) as Array<{ price: number | string }>).reduce(
+    (sum, r) => sum + (Number(r.price) || 0),
+    0
+  );
+  const credited = ((paymentRows ?? []) as Array<{ amount: number | string }>).reduce(
+    (sum, r) => sum + (Number(r.amount) || 0),
+    0
+  );
+  return Math.round((owed - credited) * 100) / 100;
+}
+
+/**
+ * Settle a member's balance: records a payment exactly equal to the current
+ * outstanding amount. Returns the settled amount (0 when nothing was owed).
+ */
+export async function clearMealBalance(input: {
+  userId: string;
+  period: string;
+  note: string | null;
+}): Promise<{ ok: boolean; error?: string; settled?: number }> {
+  const { session, supabase } = await requireMealAdmin();
+
+  if (!isValidUuid(input.userId) || !isValidPeriod(input.period)) {
+    return { ok: false, error: 'invalid-input' };
+  }
+
+  const outstanding = await outstandingFor(supabase, input.userId, input.period);
+  if (outstanding === null) return { ok: false, error: 'save-failed' };
+  if (outstanding <= 0) return { ok: true, settled: 0 };
+
+  const { error } = await supabase.from('meal_payments').insert({
+    user_id: input.userId,
+    period: input.period,
+    kind: 'payment',
+    amount: outstanding,
+    note: sanitizeNote(input.note),
+    recorded_by: session.userId,
+  });
+  if (error) return { ok: false, error: 'save-failed' };
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals');
+  return { ok: true, settled: outstanding };
+}
+
+/** Delete a mistakenly recorded payment/adjustment entry. */
+export async function removeMealPayment(input: {
+  paymentId: string;
+  period: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const { supabase } = await requireMealAdmin();
+
+  if (!isValidUuid(input.paymentId) || !isValidPeriod(input.period)) {
+    return { ok: false, error: 'invalid-input' };
+  }
+
+  const { error } = await supabase
+    .from('meal_payments')
+    .delete()
+    .eq('id', input.paymentId)
+    .eq('period', input.period);
+  if (error) return { ok: false, error: 'delete-failed' };
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals');
+  return { ok: true };
 }
