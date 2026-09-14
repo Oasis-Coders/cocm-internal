@@ -6,6 +6,15 @@
 
 -- 1) New base role. For now 'user' has the same access as 'staff';
 --    the two may diverge later.
+--    The shared roles table has a CHECK limiting names to the original
+--    three roles, so widen it minimally to admit 'user'. This grants
+--    nothing in the bookstore app: all of its policies still require
+--    staff/admin/super_admin explicitly.
+alter table public.roles drop constraint if exists roles_name_check;
+alter table public.roles
+  add constraint roles_name_check
+  check (name in ('staff', 'admin', 'super_admin', 'user'));
+
 insert into public.roles (name)
 values ('user')
 on conflict (name) do nothing;

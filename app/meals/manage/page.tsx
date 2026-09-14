@@ -83,10 +83,19 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
       .limit(120),
     supabase
       .from('meal_signups')
-      .select('meal_type, price, user_id, profiles(display_name, email)')
+      .select('meal_type, price, user_id')
       .gte('meal_date', start)
       .lt('meal_date', end),
   ]);
+
+  // meal_signups.user_id references auth.users, so join profiles separately.
+  const signupUserIds = [...new Set(((statRows ?? []) as Array<{ user_id: string }>).map((r) => r.user_id))];
+  let statProfiles: Array<{ id: string; display_name: string | null; email: string | null }> = [];
+  if (signupUserIds.length > 0) {
+    const { data } = await supabase.from('profiles').select('id, display_name, email').in('id', signupUserIds);
+    statProfiles = (data ?? []) as typeof statProfiles;
+  }
+  const profileById = new Map(statProfiles.map((p) => [p.id, p]));
 
   const settings: MealSettings = {
     breakfast_price: Number(settingsRow?.breakfast_price ?? 0),
@@ -102,10 +111,9 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
     meal_type: MealType;
     price: number | string;
     user_id: string;
-    profiles: { display_name: string | null; email: string | null } | null;
   }>;
   for (const row of statList) {
-    const profile = row.profiles;
+    const profile = profileById.get(row.user_id);
     const name = profile?.display_name || profile?.email || row.user_id.slice(0, 8);
     let entry = statsByUser.get(row.user_id);
     if (!entry) {

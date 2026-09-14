@@ -41,17 +41,16 @@ export async function updateMealPrices(formData: FormData) {
     redirect('/meals/manage?error=invalid-price');
   }
 
-  await supabase.from('meal_settings').upsert(
-    {
-      id: 1,
+  await supabase
+    .from('meal_settings')
+    .update({
       breakfast_price: breakfast,
       lunch_price: lunch,
       dinner_price: dinner,
       updated_by: session.userId,
       updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'id' }
-  );
+    })
+    .eq('id', 1);
 
   revalidatePath('/meals/manage');
   revalidatePath('/meals');
@@ -63,15 +62,14 @@ export async function updateTransferInfo(formData: FormData) {
 
   const transferInfo = String(formData.get('transferInfo') ?? '').trim().slice(0, 4000);
 
-  await supabase.from('meal_settings').upsert(
-    {
-      id: 1,
+  await supabase
+    .from('meal_settings')
+    .update({
       transfer_info: transferInfo,
       updated_by: session.userId,
       updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'id' }
-  );
+    })
+    .eq('id', 1);
 
   revalidatePath('/meals/manage');
   revalidatePath('/meals');
