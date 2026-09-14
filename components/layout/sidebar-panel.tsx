@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { signOut } from '@/app/auth/sign-out-action';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { LanguageSwitcherDark } from '@/components/layout/language-switcher';
+import { ProfileDialog } from '@/components/profile/profile-dialog';
 import type { LocalizedNavItem } from '@/lib/app-config';
 import { cn } from '@/lib/utils';
 
@@ -70,22 +71,14 @@ export function SidebarPanel({
         <SidebarNav items={items} />
       </div>
 
-      {/* Footer: role card + sign out + language */}
+      {/* Footer: profile dialog + sign out + language */}
       <div className="space-y-2 border-t border-white/[0.08] px-3 py-3 backdrop-blur-sm">
-        <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.06] px-3 py-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
-            {isZh ? '当前身份' : 'Role'}
-          </p>
-          <div className="mt-1.5 flex items-center gap-2">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-cocm-red text-[12px] font-bold text-white">
-              {avatarInitial}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-[12px] font-medium text-white/90">{displayName || email}</p>
-              <p className="text-[10px] text-white/50">{roleLabel}</p>
-            </div>
-          </div>
-        </div>
+        <ProfileDialog
+          displayName={displayName}
+          email={email}
+          roleLabel={roleLabel}
+          avatarInitial={avatarInitial}
+        />
         <form action={signOut}>
           <button
             type="submit"
