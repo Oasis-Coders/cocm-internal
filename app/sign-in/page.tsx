@@ -13,6 +13,7 @@ type SignInPageProps = {
     redirectTo?: string;
     created?: string;
     confirmation?: string;
+    reset?: string;
     error?: string;
   }>;
 };
@@ -73,23 +74,26 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
     );
   }
 
-  const message = params.created
-    ? params.confirmation
-      ? t.confirmEmail
-      : t.accountCreated
-    : params.error === 'missing-fields'
-      ? t.missingFields
-      : params.error
-        ? t.invalidCredentials
-        : undefined;
+  const message = params.reset
+    ? t.passwordReset
+    : params.created
+      ? params.confirmation
+        ? t.confirmEmail
+        : t.accountCreated
+      : params.error === 'missing-fields'
+        ? t.missingFields
+        : params.error
+          ? t.invalidCredentials
+          : undefined;
 
   return (
     <AuthCard
       mode="sign-in"
       action={requestPasswordSignIn}
       redirectTo={redirectTo}
-      status={message ? (params.created ? 'success' : 'error') : undefined}
+      status={message ? (params.created || params.reset ? 'success' : 'error') : undefined}
       message={message}
+      forgotPasswordLabel={t.forgotPassword}
     />
   );
 }

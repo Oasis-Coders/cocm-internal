@@ -10,12 +10,13 @@ type AuthCardProps = {
   redirectTo: string;
   status?: 'success' | 'error';
   message?: string;
+  forgotPasswordLabel?: string;
 };
 
 const inputClassName =
   'mt-3 w-full rounded-card border-[1.5px] border-cocm-ink/15 bg-white px-4 py-3 text-base text-cocm-ink outline-none transition placeholder:text-cocm-ink/40 focus:border-cocm-slate focus:ring-2 focus:ring-cocm-slate/20';
 
-export async function AuthCard({ mode, action, redirectTo, status, message }: AuthCardProps) {
+export async function AuthCard({ mode, action, redirectTo, status, message, forgotPasswordLabel }: AuthCardProps) {
   const store = await cookies();
   const lang: Lang = store.get('lang')?.value === 'en' ? 'en' : 'zh';
   const t = translations[lang].auth;
@@ -142,6 +143,17 @@ export async function AuthCard({ mode, action, redirectTo, status, message }: Au
             {copy.alternateCta}
           </Link>
         </p>
+
+        {mode === 'sign-in' && forgotPasswordLabel ? (
+          <p className="mt-3 text-sm text-cocm-slate">
+            <Link
+              href="/forgot-password"
+              className="font-semibold text-cocm-red underline underline-offset-2"
+            >
+              {forgotPasswordLabel}
+            </Link>
+          </p>
+        ) : null}
 
         <form action="/api/lang" method="post" className="mt-4">
           <input type="hidden" name="lang" value={lang === 'zh' ? 'en' : 'zh'} />
