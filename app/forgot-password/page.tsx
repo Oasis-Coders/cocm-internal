@@ -24,7 +24,10 @@ async function requestPasswordReset(formData: FormData) {
     redirect('/forgot-password?error=missing-fields');
   }
 
-  const supabase = await createSupabaseServerClient();
+  // Use the implicit flow (no PKCE code challenge): the emailed link then
+  // carries a self-contained token that /auth/confirm verifies directly, so
+  // it works even when clicked on a different device/browser.
+  const supabase = await createSupabaseServerClient({ auth: { flowType: 'implicit' } });
 
   if (!supabase) {
     redirect('/forgot-password?error=supabase-unavailable');
@@ -33,7 +36,10 @@ async function requestPasswordReset(formData: FormData) {
   const hdrs = await headers();
   const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
   const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  const redirectTo = `${proto}://${host}/auth/callback?redirectTo=${encodeURIComponent('/reset-password')}`;
+  // The email link points at /auth/confirm, which verifies the token
+  // server-side (no PKCE verifier cookie needed, so the link works even when
+  // clicked on a different device than the one that requested it).
+  const redirectTo = `${proto}://${host}/auth/confirm`;
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
 
@@ -66,6 +72,8 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
       ? { tone: 'error' as const, text: t.missingFields }
       : params.error === 'request-failed'
         ? { tone: 'error' as const, text: t.resetRequestFailed }
+        : params.error === 'invalid-link'
+          ? { tone: 'error' as const, text: t.resetLinkInvalid }
         : params.error === 'supabase-unavailable'
           ? { tone: 'error' as const, text: t.supabaseUnavailable }
           : null;

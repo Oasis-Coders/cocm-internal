@@ -3,7 +3,9 @@ import { createServerClient } from '@supabase/ssr';
 
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 
-export async function createSupabaseServerClient() {
+export async function createSupabaseServerClient(options?: {
+  auth?: { flowType?: 'implicit' | 'pkce' };
+}) {
   if (!hasSupabaseEnv()) {
     return null;
   }
@@ -37,6 +39,7 @@ export async function createSupabaseServerClient() {
           }
         },
       },
+      ...(options?.auth ? { auth: options.auth } : {}),
     }
   );
 }
