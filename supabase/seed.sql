@@ -1,0 +1,4 @@
+-- cocm-internal shares the bookstore's Supabase project (auth.users, profiles,
+-- roles, user_roles are owned there). No local seed data is needed; new users
+-- get a profile row and a role automatically via the shared handle_new_user()
+-- trigger on auth.users.

@@ -1,0 +1,14 @@
+.next
+node_modules
+.env
+.env.local
+.env.production
+coverage
+artifacts
+test-results
+playwright-report
+.vercel
+tsconfig.tsbuildinfo
+supabase/.branches
+supabase/.temp
+.env.e2e.local
