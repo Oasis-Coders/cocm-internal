@@ -361,18 +361,26 @@ export function SettlementPanel({ rows, paymentsByUser, currency, period, t, tc,
             ) : null}
             <label className="mt-4 flex flex-col gap-1 text-sm">
               <span className="font-semibold text-cocm-ink">
-                {t.paymentAmount} ({currency})
+                {t.paymentAmount} (£)
               </span>
-              <input
-                type="number"
-                min={dialog.mode === 'payment' ? '0.01' : undefined}
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                autoFocus
-                className={inputClass}
-              />
+              <span className="relative block">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-cocm-slate"
+                >
+                  £
+                </span>
+                <input
+                  type="number"
+                  min={dialog.mode === 'payment' ? '0.01' : undefined}
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  autoFocus
+                  className={`${inputClass} pl-8`}
+                />
+              </span>
             </label>
             <label className="mt-3 flex flex-col gap-1 text-sm">
               <span className="font-semibold text-cocm-ink">{t.paymentNote}</span>

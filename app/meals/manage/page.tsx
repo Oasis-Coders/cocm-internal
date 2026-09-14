@@ -214,21 +214,29 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
             {mealTypes.map((type) => (
               <label key={type} className="flex flex-col gap-1 text-sm">
                 <span className="font-semibold text-cocm-ink">{mealLabel(type)}</span>
-                <input
-                  type="number"
-                  name={type}
-                  min="0"
-                  step="0.01"
-                  required
-                  defaultValue={(
-                    type === 'breakfast'
-                      ? settings.breakfast_price
-                      : type === 'lunch'
-                        ? settings.lunch_price
-                        : settings.dinner_price
-                  ).toFixed(2)}
-                  className={inputClass}
-                />
+                <span className="relative block">
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-cocm-slate"
+                  >
+                    £
+                  </span>
+                  <input
+                    type="number"
+                    name={type}
+                    min="0"
+                    step="0.01"
+                    required
+                    defaultValue={(
+                      type === 'breakfast'
+                        ? settings.breakfast_price
+                        : type === 'lunch'
+                          ? settings.lunch_price
+                          : settings.dinner_price
+                    ).toFixed(2)}
+                    className={`${inputClass} pl-8`}
+                  />
+                </span>
               </label>
             ))}
           </div>
