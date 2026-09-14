@@ -81,6 +81,8 @@ function roleLabel(role: string, lang: Lang): string {
       return '管理员';
     case 'staff':
       return '同工';
+    case 'user':
+      return '用户';
     default:
       return role;
   }

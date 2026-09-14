@@ -3,7 +3,7 @@ import type { AppRole } from '@/lib/app-config';
 const defaultRole: AppRole = 'staff';
 
 export function normalizeRole(value: string | undefined): AppRole {
-  if (value === 'super_admin' || value === 'admin' || value === 'staff') {
+  if (value === 'super_admin' || value === 'admin' || value === 'staff' || value === 'user') {
     return value;
   }
 
@@ -44,5 +44,7 @@ export function roleRank(role: AppRole): number {
       return 2;
     case 'staff':
       return 1;
+    case 'user':
+      return 0;
   }
 }

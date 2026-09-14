@@ -64,7 +64,7 @@ export async function middleware(request: NextRequest) {
 
   if (needsStaff) {
     const { data, error } = await supabase.rpc('has_any_role', {
-      role_names: ['staff', 'admin', 'super_admin'],
+      role_names: ['staff', 'admin', 'super_admin', 'user'],
     });
 
     if (error || !data) {

@@ -1,6 +1,7 @@
-export type AppRole = 'super_admin' | 'admin' | 'staff';
-export const appRoles: AppRole[] = ['super_admin', 'admin', 'staff'];
-export const staffPrivilegedRoles: AppRole[] = ['super_admin', 'admin', 'staff'];
+export type AppRole = 'super_admin' | 'admin' | 'staff' | 'user';
+export const appRoles: AppRole[] = ['super_admin', 'admin', 'staff', 'user'];
+// 'user' currently has the same access as 'staff'; the two may diverge later.
+export const staffPrivilegedRoles: AppRole[] = ['super_admin', 'admin', 'staff', 'user'];
 export const adminPrivilegedRoles: AppRole[] = ['super_admin', 'admin'];
 
 export type Lang = 'en' | 'zh';

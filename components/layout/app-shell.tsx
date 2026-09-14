@@ -37,9 +37,13 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
         ? lang === 'zh'
           ? '管理员'
           : 'Admin'
-        : lang === 'zh'
-          ? '同工'
-          : 'Staff';
+        : session.role === 'user'
+          ? lang === 'zh'
+            ? '用户'
+            : 'User'
+          : lang === 'zh'
+            ? '同工'
+            : 'Staff';
 
   return (
     <div className="min-h-screen bg-cocm-paper text-cocm-ink">
