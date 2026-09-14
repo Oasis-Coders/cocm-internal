@@ -18,7 +18,7 @@
 
 export function CocmLoadingScreen() {
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden bg-cocm-paper">
+    <div className="brand-wash-bg fixed inset-0 z-[200] flex items-center justify-center overflow-hidden">
       {/* ── Animated background layers ─────────────────────────── */}
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div className="loading-orb loading-orb-1" />

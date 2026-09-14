@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">
-      <body className="bg-cocm-paper text-cocm-ink">
+      <body className="brand-wash-bg text-cocm-ink">
         <I18nProvider>
           <RouteProgress />
           {children}

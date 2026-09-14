@@ -52,7 +52,7 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
     'C';
 
   return (
-    <div className="min-h-screen bg-cocm-paper text-cocm-ink">
+    <div className="brand-wash-bg min-h-screen text-cocm-ink">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[200] focus:rounded-[10px] focus:bg-white focus:px-4 focus:py-2 focus:text-[13px] focus:font-medium focus:text-cocm-ink focus:shadow-lg"
@@ -73,7 +73,7 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
         </MobileSidebar>
 
         <main id="main-content" className="min-w-0 flex-1">
-          <div className="sticky top-0 z-10 -mt-px border-b border-cocm-ink/5 bg-cocm-paper/80 backdrop-blur-xl lg:rounded-t-[20px] lg:border lg:border-cocm-ink/5">
+          <div className="sticky top-0 z-10 -mt-px border-b border-cocm-ink/5 bg-white/70 backdrop-blur-xl lg:rounded-t-[20px] lg:border lg:border-cocm-ink/5">
             <div className="flex items-center justify-between py-4 pl-16 pr-4 lg:px-8 lg:py-6 lg:pl-8">
               <div className="min-w-0 flex-1">
                 <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-cocm-red">

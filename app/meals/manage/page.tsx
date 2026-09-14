@@ -17,13 +17,10 @@ import {
   mealTypes,
 } from '@/lib/meals';
 import {
-  addMealDay,
-  deleteMealDay,
-  toggleMealAvailability,
   updateMealPrices,
   updateTransferInfo,
 } from '@/app/meals/manage/actions';
-import { DeleteDayButton } from '@/app/meals/manage/delete-day-button';
+import { MealCalendar } from '@/app/meals/manage/meal-calendar';
 
 type ManagePageProps = {
   searchParams: Promise<{ month?: string; saved?: string; error?: string }>;
@@ -79,14 +76,32 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
     supabase
       .from('meal_days')
       .select('meal_date, breakfast_available, lunch_available, dinner_available, note')
-      .order('meal_date', { ascending: false })
-      .limit(120),
+      .order('meal_date', { ascending: true })
+      .limit(500),
     supabase
       .from('meal_signups')
       .select('meal_type, price, user_id')
       .gte('meal_date', start)
       .lt('meal_date', end),
   ]);
+
+  // Per-day signup counts for the calendar (±6 months around today).
+  const nowD = new Date();
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const startOffset = nowD.getMonth() - 5; // first day of month, 5 months back
+  const calStartD = new Date(nowD.getFullYear(), startOffset, 1);
+  const calEndD = new Date(nowD.getFullYear(), nowD.getMonth() + 7, 0); // last day, 6 months ahead
+  const calStartIso = `${calStartD.getFullYear()}-${pad2(calStartD.getMonth() + 1)}-01`;
+  const calEndIso = `${calEndD.getFullYear()}-${pad2(calEndD.getMonth() + 1)}-${pad2(calEndD.getDate())}`;
+  const { data: signupDateRows } = await supabase
+    .from('meal_signups')
+    .select('meal_date')
+    .gte('meal_date', calStartIso)
+    .lte('meal_date', calEndIso);
+  const signupCounts: Record<string, number> = {};
+  for (const r of (signupDateRows ?? []) as Array<{ meal_date: string }>) {
+    signupCounts[r.meal_date] = (signupCounts[r.meal_date] ?? 0) + 1;
+  }
 
   // meal_signups.user_id references auth.users, so join profiles separately.
   const signupUserIds = [...new Set(((statRows ?? []) as Array<{ user_id: string }>).map((r) => r.user_id))];
@@ -208,85 +223,14 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
         </form>
       </div>
 
-      <div className="mt-4 rounded-[20px] border border-cocm-ink/10 bg-white p-5 shadow-card md:p-6">
-        <h3 className="font-serif text-xl text-cocm-ink">{t.daysTitle}</h3>
-        <p className="mt-1 text-sm text-cocm-slate">{t.daysDesc}</p>
-
-        <form action={addMealDay} className="mt-4 flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-semibold text-cocm-ink">{t.date}</span>
-            <input type="date" name="date" required className={inputClass} />
-          </label>
-          {mealTypes.map((type) => (
-            <label key={type} className="flex items-center gap-2 text-sm text-cocm-ink">
-              <input type="checkbox" name={type} defaultChecked className="h-4 w-4 accent-cocm-red" />
-              {mealLabel(type)}
-            </label>
-          ))}
-          <input
-            type="text"
-            name="note"
-            placeholder={t.notePlaceholder}
-            maxLength={200}
-            className={`${inputClass} min-w-[180px] flex-1`}
-            aria-label={t.note}
-          />
-          <button
-            type="submit"
-            className="rounded-[12px] bg-cocm-ink px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-cocm-ink-light active:scale-[0.98]"
-          >
-            {t.addDay}
-          </button>
-        </form>
-
-        <div className="mt-4 flex flex-col gap-2">
-          {days.length === 0 ? (
-            <p className="text-sm text-cocm-slate">{t.noUpcoming}</p>
-          ) : (
-            days.map((day) => (
-              <div
-                key={day.meal_date}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-cocm-ink/10 px-4 py-3"
-              >
-                <div>
-                  <p className="font-semibold text-cocm-ink">{day.meal_date}</p>
-                  {day.note ? <p className="text-sm text-cocm-slate">{day.note}</p> : null}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {mealTypes.map((type) => {
-                    const available =
-                      type === 'breakfast'
-                        ? day.breakfast_available
-                        : type === 'lunch'
-                          ? day.lunch_available
-                          : day.dinner_available;
-                    return (
-                      <form key={type} action={toggleMealAvailability.bind(null, day.meal_date, type)}>
-                        <button
-                          type="submit"
-                          aria-pressed={available}
-                          className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-                            available
-                              ? 'bg-cocm-red/10 text-cocm-red'
-                              : 'bg-cocm-ink/5 text-cocm-slate line-through'
-                          }`}
-                        >
-                          {mealLabel(type)}
-                        </button>
-                      </form>
-                    );
-                  })}
-                  <DeleteDayButton
-                    date={day.meal_date}
-                    label={t.deleteDay}
-                    confirmMessage={t.confirmDeleteDay}
-                    action={deleteMealDay.bind(null, day.meal_date)}
-                  />
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+      <div className="mt-4">
+        <MealCalendar
+          days={days}
+          signupCounts={signupCounts}
+          t={t}
+          tc={tc}
+          lang={lang}
+        />
       </div>
 
       <div className="mt-4 rounded-[20px] border border-cocm-ink/10 bg-white p-5 shadow-card md:p-6">

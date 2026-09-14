@@ -50,8 +50,8 @@ a {
   transform: translateY(-2px);
 }
 
-/* ── Auth form panel background: soft brand-wash gradient, not a flat color ── */
-.auth-panel-bg {
+/* ── Brand-wash gradient background: soft indigo/red washes, not a flat color ── */
+.brand-wash-bg {
   background:
     radial-gradient(640px 420px at 88% 8%, rgba(45, 47, 146, 0.10), transparent 62%),
     radial-gradient(560px 420px at 6% 94%, rgba(229, 68, 76, 0.07), transparent 60%),

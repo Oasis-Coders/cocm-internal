@@ -143,3 +143,136 @@ export async function deleteMealDay(mealDate: string) {
   revalidatePath('/meals/manage');
   revalidatePath('/meals');
 }
+
+// ── Client-component friendly actions (no redirects) ──
+
+export type MealDayInput = {
+  date: string;
+  breakfast: boolean;
+  lunch: boolean;
+  dinner: boolean;
+  note: string | null;
+};
+
+function sanitizeNote(value: string | null): string | null {
+  const note = (value ?? '').trim().slice(0, 200);
+  return note ? note : null;
+}
+
+/** Iterate YYYY-MM-DD strings from start to end (inclusive), capped at 366 days. */
+function eachDateInRange(start: string, end: string): string[] {
+  const [sy, sm, sd] = start.split('-').map(Number);
+  const [ey, em, ed] = end.split('-').map(Number);
+  const dates: string[] = [];
+  const cur = new Date(Date.UTC(sy, sm - 1, sd));
+  const last = new Date(Date.UTC(ey, em - 1, ed));
+  while (cur <= last && dates.length < 366) {
+    dates.push(cur.toISOString().slice(0, 10));
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return dates;
+}
+
+/** Create or update a single meal day (called from the calendar editor). */
+export async function saveMealDay(input: MealDayInput): Promise<{ ok: boolean; error?: string }> {
+  const { supabase } = await requireMealAdmin();
+
+  if (!isValidDate(input.date)) return { ok: false, error: 'invalid-date' };
+
+  const { error } = await supabase.from('meal_days').upsert(
+    {
+      meal_date: input.date,
+      breakfast_available: !!input.breakfast,
+      lunch_available: !!input.lunch,
+      dinner_available: !!input.dinner,
+      note: sanitizeNote(input.note),
+    },
+    { onConflict: 'meal_date' }
+  );
+
+  if (error) return { ok: false, error: 'save-failed' };
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals');
+  return { ok: true };
+}
+
+/** Delete a single meal day (signups cascade). */
+export async function removeMealDay(date: string): Promise<{ ok: boolean; error?: string }> {
+  const { supabase } = await requireMealAdmin();
+
+  if (!isValidDate(date)) return { ok: false, error: 'invalid-date' };
+
+  const { error } = await supabase.from('meal_days').delete().eq('meal_date', date);
+  if (error) return { ok: false, error: 'delete-failed' };
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals');
+  return { ok: true };
+}
+
+/**
+ * Apply meal availability to every day in [start, end].
+ * Existing days keep their notes; missing days are created.
+ */
+export async function saveMealDayRange(input: {
+  start: string;
+  end: string;
+  breakfast: boolean;
+  lunch: boolean;
+  dinner: boolean;
+}): Promise<{ ok: boolean; error?: string; count?: number }> {
+  const { supabase } = await requireMealAdmin();
+
+  const lo = input.start <= input.end ? input.start : input.end;
+  const hi = input.start <= input.end ? input.end : input.start;
+  if (!isValidDate(lo) || !isValidDate(hi)) return { ok: false, error: 'invalid-date' };
+
+  const dates = eachDateInRange(lo, hi);
+  if (dates.length === 0) return { ok: false, error: 'invalid-date' };
+
+  const { data: existing } = await supabase
+    .from('meal_days')
+    .select('meal_date, note')
+    .gte('meal_date', lo)
+    .lte('meal_date', hi);
+  const noteByDate = new Map(((existing ?? []) as Array<{ meal_date: string; note: string | null }>).map((r) => [r.meal_date, r.note]));
+
+  const rows = dates.map((meal_date) => ({
+    meal_date,
+    breakfast_available: !!input.breakfast,
+    lunch_available: !!input.lunch,
+    dinner_available: !!input.dinner,
+    note: noteByDate.get(meal_date) ?? null,
+  }));
+
+  const { error } = await supabase.from('meal_days').upsert(rows, { onConflict: 'meal_date' });
+  if (error) return { ok: false, error: 'save-failed' };
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals');
+  return { ok: true, count: dates.length };
+}
+
+/** Delete every meal day in [start, end] (signups cascade). */
+export async function removeMealDayRange(input: {
+  start: string;
+  end: string;
+}): Promise<{ ok: boolean; error?: string; count?: number }> {
+  const { supabase } = await requireMealAdmin();
+
+  const lo = input.start <= input.end ? input.start : input.end;
+  const hi = input.start <= input.end ? input.end : input.start;
+  if (!isValidDate(lo) || !isValidDate(hi)) return { ok: false, error: 'invalid-date' };
+
+  const { error, count } = await supabase
+    .from('meal_days')
+    .delete({ count: 'exact' })
+    .gte('meal_date', lo)
+    .lte('meal_date', hi);
+  if (error) return { ok: false, error: 'delete-failed' };
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals');
+  return { ok: true, count: count ?? 0 };
+}
