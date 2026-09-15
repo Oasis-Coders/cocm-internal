@@ -46,17 +46,16 @@ type BookCoreInput = {
   mealDate: string;
   type: MealType;
   headcount: number;
-  allergenConfirmed: boolean;
 };
 
 /**
- * Shared booking core: availability, duplicate and allergen checks, then the
+ * Shared booking core: availability and duplicate checks, then the
  * insert with identity-based price snapshot. Assumes inputs are validated.
  */
 async function bookMealForDiner(
   input: BookCoreInput
 ): Promise<{ ok: boolean; error?: string }> {
-  const { supabase, session, diner, mealDate, type, headcount, allergenConfirmed } = input;
+  const { supabase, session, diner, mealDate, type, headcount } = input;
 
   if (!diner.is_active) {
     return { ok: false, error: 'invalid-diner' };
@@ -70,10 +69,6 @@ async function bookMealForDiner(
 
   if (!day || !isMealAvailable(day as MealDay, type)) {
     return { ok: false, error: 'not-available' };
-  }
-  // Booking for another user's linked diner also needs the allergen promise.
-  if (diner.user_id && diner.user_id !== session.userId && !allergenConfirmed) {
-    return { ok: false, error: 'allergen-required' };
   }
 
   const { data: existing } = await supabase
@@ -107,7 +102,7 @@ async function bookMealForDiner(
     meal_date: mealDate,
     meal_type: type,
     price: total,
-    allergen_confirmed: !!allergenConfirmed,
+    allergen_confirmed: false,
     booked_by: session.userId,
     user_id: session.userId,
   });
@@ -144,14 +139,11 @@ export type SignupMealInput = {
   mealDate: string;
   mealType: string;
   headcount: number;
-  allergenConfirmed: boolean;
 };
 
 /**
  * Book a meal for someone on the roster (yourself or a guest).
  * Price is snapshotted from identity-based pricing at signup time.
- * Adding extra people (headcount > 1) requires confirming allergens were
- * checked with them.
  */
 export async function signupMeal(
   input: SignupMealInput
@@ -162,7 +154,7 @@ export async function signupMeal(
     return { ok: false, error: 'unauthenticated' };
   }
 
-  const { dinerId, mealDate, mealType, headcount, allergenConfirmed } = input;
+  const { dinerId, mealDate, mealType, headcount } = input;
 
   if (
     !isValidUuid(dinerId) ||
@@ -173,10 +165,6 @@ export async function signupMeal(
     headcount > 20
   ) {
     return { ok: false, error: 'invalid-input' };
-  }
-
-  if (headcount > 1 && !allergenConfirmed) {
-    return { ok: false, error: 'allergen-required' };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -201,7 +189,6 @@ export async function signupMeal(
     mealDate,
     type: mealType as MealType,
     headcount,
-    allergenConfirmed,
   });
 }
 
@@ -211,15 +198,13 @@ export type SignupGuestMealInput = {
   mealDate: string;
   mealType: string;
   headcount: number;
-  allergenConfirmed: boolean;
 };
 
 /**
  * Book a meal for a guest by typing their name directly. Reuses the existing
  * roster entry when the name already exists (exact, then case-insensitive
  * match); otherwise creates one attributed to the booker so the name is saved
- * for quick re-booking later. Typed-name bookings always require the allergen
- * confirmation since they are never self-bookings.
+ * for quick re-booking later.
  */
 export async function signupGuestMeal(
   input: SignupGuestMealInput
@@ -230,7 +215,7 @@ export async function signupGuestMeal(
     return { ok: false, error: 'unauthenticated' };
   }
 
-  const { guestName, identity, mealDate, mealType, headcount, allergenConfirmed } = input;
+  const { guestName, identity, mealDate, mealType, headcount } = input;
   const name = normalizeGuestName(guestName);
 
   if (
@@ -243,10 +228,6 @@ export async function signupGuestMeal(
     headcount > 20
   ) {
     return { ok: false, error: 'invalid-input' };
-  }
-
-  if (!allergenConfirmed) {
-    return { ok: false, error: 'allergen-required' };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -296,7 +277,6 @@ export async function signupGuestMeal(
     mealDate,
     type: mealType as MealType,
     headcount,
-    allergenConfirmed: true,
   });
 }
 

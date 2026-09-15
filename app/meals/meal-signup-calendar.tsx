@@ -82,7 +82,6 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
   const [dinerId, setDinerId] = useState('');
   const [headcount, setHeadcount] = useState(1);
   const [forOthers, setForOthers] = useState(false);
-  const [allergenOk, setAllergenOk] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [myDinerId, setMyDinerId] = useState<string | null>(null);
   // Typed-name mode: book a guest by typing their name directly.
@@ -176,7 +175,6 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
     ? diners.find((d) => d.name === typedName)
       ?? diners.find((d) => d.name.toLowerCase() === typedName.toLowerCase())
     : undefined;
-  const allergenRequired = forOthers || headcount > 1 || typedMode;
   const unitPrice = typedMode
     ? priceForIdentity(
         { ...prices, breakfast_price: 0, lunch_price: 0, dinner_price: 0, currency: 'GBP', transfer_info: '' },
@@ -205,7 +203,6 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
   const errorText = (code: string | null): string | null => {
     if (!code) return null;
     switch (code) {
-      case 'allergen-required': return t.allergenRequired;
       case 'already-signed-up': return t.alreadySignedUp;
       case 'not-available': return t.notAvailable;
       case 'invalid-diner': return t.invalidDiner;
@@ -223,10 +220,6 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
       setError(t.pickNameFirst);
       return;
     }
-    if (allergenRequired && !allergenOk) {
-      setError(t.allergenRequired);
-      return;
-    }
     const key = `book:${mealType}`;
     setError(null);
     setNotice(null);
@@ -239,14 +232,12 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
             mealDate: selected!,
             mealType,
             headcount,
-            allergenConfirmed: allergenOk,
           })
         : await signupMeal({
             dinerId,
             mealDate: selected!,
             mealType,
             headcount,
-            allergenConfirmed: allergenOk,
           });
       if (!res.ok) {
         setError(errorText(res.error ?? null));
@@ -262,7 +253,6 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
         // Keep the typed guest name so the same person can be booked for
         // another meal with one more tap.
         setHeadcount(1);
-        setAllergenOk(false);
         setNotice(t.bookedOk);
       }
       setPendingKey(null);
@@ -511,18 +501,6 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                 </label>
               )}
 
-              <label className={`mt-3 flex cursor-pointer items-start gap-2.5 rounded-[12px] border p-3 text-sm transition ${allergenRequired ? 'border-amber-500/40 bg-amber-50' : 'border-cocm-ink/10 bg-white'}`}>
-                <input
-                  type="checkbox"
-                  checked={allergenOk}
-                  onChange={(e) => setAllergenOk(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded accent-cocm-blue"
-                />
-                <span className="text-cocm-ink">
-                  {t.allergenConfirm}
-                  {allergenRequired ? <span className="text-cocm-red"> *</span> : null}
-                </span>
-              </label>
               {selectedDiner?.allergens ? (
                 <p className="mt-2 rounded-[10px] bg-amber-100/70 px-3 py-2 text-xs font-semibold text-amber-800">
                   ⚠ {t.allergenOnFile}: {selectedDiner.allergens}
