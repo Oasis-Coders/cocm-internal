@@ -26,6 +26,7 @@ type PageData = {
   diners: MealDiner[];
   signups: MealSignup[];
   mySignups: MealSignup[];
+  recentDiners: MealDiner[];
   paidThisMonth: number;
   ready: boolean;
 };
@@ -37,6 +38,7 @@ async function loadPageData(userId: string): Promise<PageData> {
     diners: [],
     signups: [],
     mySignups: [],
+    recentDiners: [],
     paidThisMonth: 0,
     ready: false,
   };
@@ -57,6 +59,7 @@ async function loadPageData(userId: string): Promise<PageData> {
       { data: signupRows },
       { data: mySignupRows },
       { data: myDinerRows },
+      { data: recentSignupRows },
     ] = await Promise.all([
       supabase.from('meal_settings').select('*').eq('id', 1).maybeSingle(),
       supabase
@@ -85,9 +88,30 @@ async function loadPageData(userId: string): Promise<PageData> {
         .lt('meal_date', end)
         .order('meal_date', { ascending: true }),
       supabase.from('meal_diners').select('id').eq('user_id', userId),
+      // Names this account has booked before (for one-tap re-booking of guests).
+      supabase
+        .from('meal_signups')
+        .select('diner_id, created_at')
+        .eq('booked_by', userId)
+        .order('created_at', { ascending: false })
+        .limit(60),
     ]);
 
     if (!dayRows || !dinerRows || !signupRows) return fallback;
+
+    // Most-recently booked diners for this account, excluding their own linked
+    // diner — these become the "names I've booked" quick chips.
+    const dinerById = new Map(((dinerRows ?? []) as MealDiner[]).map((d) => [d.id, d]));
+    const seenRecent = new Set<string>();
+    const recentDiners: MealDiner[] = [];
+    for (const row of (recentSignupRows ?? []) as Array<{ diner_id: string | null }>) {
+      const id = row.diner_id;
+      if (!id || seenRecent.has(id)) continue;
+      seenRecent.add(id);
+      const d = dinerById.get(id);
+      if (d && d.user_id !== userId) recentDiners.push(d);
+      if (recentDiners.length >= 8) break;
+    }
 
     const myDinerIds = ((myDinerRows ?? []) as Array<{ id: string }>).map((r) => r.id);
     let paidRows: Array<{ amount: number | string }> = [];
@@ -131,6 +155,7 @@ async function loadPageData(userId: string): Promise<PageData> {
         price: Number(s.price) || 0,
         headcount: Number(s.headcount) || 1,
       })),
+      recentDiners,
       paidThisMonth: Math.round(paidThisMonth * 100) / 100,
       ready: true,
     };
@@ -228,6 +253,7 @@ export default async function MealsPage() {
               days={data.days}
               diners={data.diners}
               signups={data.signups}
+              recentDiners={data.recentDiners}
               myUserId={session.userId}
               prices={{ price_staff: data.settings.price_staff, price_other: data.settings.price_other }}
               t={t}
