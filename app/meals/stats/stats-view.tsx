@@ -328,7 +328,14 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
                         <td className="px-4 py-3 text-right text-cocm-slate">{formatMoney(row.owed, CURRENCY)}</td>
                         <td className="px-4 py-3 text-right text-cocm-slate">{formatMoney(row.paid, CURRENCY)}</td>
                         <td className="px-4 py-3 text-right text-cocm-slate">
-                          {row.adjusted === 0 ? '—' : `${row.adjusted > 0 ? '−' : '+'}${formatMoney(Math.abs(row.adjusted), CURRENCY)}`}
+                          {row.adjusted === 0 ? (
+                            '—'
+                          ) : (
+                            <span className={row.adjusted > 0 ? 'font-semibold text-green-700' : 'font-semibold text-cocm-red'}>
+                              {row.adjusted > 0 ? t.adjustWaiver : t.adjustCharge}{' '}
+                              {formatMoney(Math.abs(row.adjusted), CURRENCY)}
+                            </span>
+                          )}
                         </td>
                         <td className={`px-4 py-3 text-right font-semibold ${settled ? 'text-green-700' : 'text-cocm-red'}`}>
                           {settled ? t.settledNote : formatMoney(row.outstanding, CURRENCY)}
@@ -368,8 +375,10 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
                                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.kind === 'payment' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
                                       {p.kind === 'payment' ? t.kindPayment : t.kindAdjustment}
                                     </span>
-                                    <span className="font-semibold text-cocm-ink">
-                                      {p.amount < 0 ? '+' : '−'}{formatMoney(Math.abs(p.amount), CURRENCY)}
+                                    <span className={`font-semibold ${p.kind === 'adjustment' && p.amount < 0 ? 'text-cocm-red' : p.kind === 'adjustment' ? 'text-green-700' : 'text-cocm-ink'}`}>
+                                      {p.kind === 'adjustment'
+                                        ? `${p.amount < 0 ? t.adjustCharge : t.adjustWaiver} ${formatMoney(Math.abs(p.amount), CURRENCY)}`
+                                        : formatMoney(p.amount, CURRENCY)}
                                     </span>
                                     {p.note ? <span className="text-cocm-slate">{p.note}</span> : null}
                                     {confirmDelete === p.id ? (
@@ -406,7 +415,14 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
                   <td className="px-4 py-3 text-right text-cocm-ink">{formatMoney(totals.owed, CURRENCY)}</td>
                   <td className="px-4 py-3 text-right text-cocm-ink">{formatMoney(totals.paid, CURRENCY)}</td>
                   <td className="px-4 py-3 text-right text-cocm-ink">
-                    {totals.adjusted === 0 ? '—' : `${totals.adjusted > 0 ? '−' : '+'}${formatMoney(Math.abs(totals.adjusted), CURRENCY)}`}
+                    {totals.adjusted === 0 ? (
+                      '—'
+                    ) : (
+                      <span className={totals.adjusted > 0 ? 'text-green-700' : 'text-cocm-red'}>
+                        {totals.adjusted > 0 ? t.adjustWaiver : t.adjustCharge}{' '}
+                        {formatMoney(Math.abs(totals.adjusted), CURRENCY)}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right font-serif text-base text-cocm-ink">
                     {formatMoney(totals.outstanding, CURRENCY)}
