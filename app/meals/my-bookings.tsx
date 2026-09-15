@@ -25,14 +25,17 @@ function formatDay(dateStr: string, lang: Lang) {
 
 export function MyBookings({ signups, currency, t, lang }: Props) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   const mealLabel = (type: string) =>
     type === 'breakfast' ? t.breakfast : type === 'lunch' ? t.lunch : t.dinner;
 
   const cancel = (id: string) => {
+    setPendingId(id);
     startTransition(async () => {
       await cancelMealSignup(id);
+      setPendingId(null);
       router.refresh();
     });
   };
@@ -59,11 +62,11 @@ export function MyBookings({ signups, currency, t, lang }: Props) {
               </div>
               <button
                 type="button"
-                disabled={isPending}
+                disabled={pendingId === s.id}
                 onClick={() => cancel(s.id)}
                 className="shrink-0 rounded-[10px] border border-cocm-ink/15 px-3 py-1.5 text-[13px] font-semibold text-cocm-slate transition hover:border-cocm-red/40 hover:text-cocm-red active:scale-[0.97] disabled:opacity-50"
               >
-                {t.cancelBooking}
+                {pendingId === s.id ? '…' : t.cancelBooking}
               </button>
             </li>
           ))}

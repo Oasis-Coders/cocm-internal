@@ -65,7 +65,11 @@ const MY_DINER_KEY = 'cocm_my_diner';
 
 export function MealSignupCalendar({ days, diners, signups, myUserId, prices, t, lang }: Props) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  // Which action is in flight (e.g. `book:lunch`, `cancel:<id>`); only that
+  // button shows a spinner so a slow request never freezes the whole panel.
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const now = useMemo(() => new Date(), []);
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -95,6 +99,12 @@ export function MealSignupCalendar({ days, diners, signups, myUserId, prices, t,
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myDinerId, diners]);
+
+  // Clear feedback when switching days.
+  useEffect(() => {
+    setNotice(null);
+    setError(null);
+  }, [selected]);
 
   const today = useMemo(todayIso, []);
   const dayMap = useMemo(() => new Map(days.map((d) => [d.meal_date, d])), [days]);
@@ -192,7 +202,10 @@ export function MealSignupCalendar({ days, diners, signups, myUserId, prices, t,
       setError(t.allergenRequired);
       return;
     }
+    const key = `book:${mealType}`;
     setError(null);
+    setNotice(null);
+    setPendingKey(key);
     startTransition(async () => {
       const res = await signupMeal({
         dinerId,
@@ -203,24 +216,35 @@ export function MealSignupCalendar({ days, diners, signups, myUserId, prices, t,
       });
       if (!res.ok) {
         setError(errorText(res.error ?? null));
-        return;
+      } else {
+        // Remember self when booking as self.
+        if (!forOthers) {
+          setMyDinerId(dinerId);
+          try {
+            localStorage.setItem(MY_DINER_KEY, dinerId);
+          } catch { /* ignore */ }
+        }
+        // Immediate feedback even while the list refreshes in the background.
+        setHeadcount(1);
+        setAllergenOk(false);
+        setNotice(t.bookedOk);
       }
-      // Remember self when booking as self.
-      if (!forOthers) {
-        setMyDinerId(dinerId);
-        try {
-          localStorage.setItem(MY_DINER_KEY, dinerId);
-        } catch { /* ignore */ }
-      }
+      setPendingKey(null);
       router.refresh();
     });
   };
 
   const cancel = (signupId: string) => {
+    const key = `cancel:${signupId}`;
+    setError(null);
+    setNotice(null);
+    setPendingKey(key);
     startTransition(async () => {
       const res = await cancelMealSignup(signupId);
       if (!res.ok) setError(t.actionFailed);
-      else router.refresh();
+      else setNotice(t.cancelledOk);
+      setPendingKey(null);
+      router.refresh();
     });
   };
 
@@ -410,6 +434,11 @@ export function MealSignupCalendar({ days, diners, signups, myUserId, prices, t,
               {error ? (
                 <p className="mt-2 text-sm font-semibold text-cocm-red">{error}</p>
               ) : null}
+              {notice ? (
+                <p className="mt-2 rounded-[10px] bg-green-50 px-3 py-2 text-sm font-semibold text-green-700">
+                  {notice}
+                </p>
+              ) : null}
 
               {/* Meals */}
               <div className="mt-4 space-y-3">
@@ -428,12 +457,12 @@ export function MealSignupCalendar({ days, diners, signups, myUserId, prices, t,
                         </p>
                         <button
                           type="button"
-                          disabled={isPending || !dinerId || !!alreadyBooked}
+                          disabled={pendingKey === `book:${mt}` || !dinerId || !!alreadyBooked}
                           onClick={() => book(mt)}
                           title={alreadyBooked ? t.alreadySignedUp : undefined}
                           className="rounded-[10px] bg-cocm-red px-4 py-2 text-sm font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark active:scale-[0.98] disabled:opacity-40"
                         >
-                          {isPending ? '…' : alreadyBooked ? t.signedUp : t.bookMeal}
+                          {pendingKey === `book:${mt}` ? '…' : alreadyBooked ? t.signedUp : t.bookMeal}
                         </button>
                       </div>
                       {list.length > 0 ? (
@@ -456,11 +485,11 @@ export function MealSignupCalendar({ days, diners, signups, myUserId, prices, t,
                                 {isMine ? (
                                   <button
                                     type="button"
-                                    disabled={isPending}
+                                    disabled={pendingKey === `cancel:${s.id}`}
                                     onClick={() => cancel(s.id)}
                                     className="shrink-0 text-xs font-semibold text-cocm-slate underline-offset-2 hover:text-cocm-red hover:underline disabled:opacity-50"
                                   >
-                                    {t.cancelBooking}
+                                    {pendingKey === `cancel:${s.id}` ? '…' : t.cancelBooking}
                                   </button>
                                 ) : null}
                               </li>

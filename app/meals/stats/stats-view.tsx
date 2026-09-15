@@ -461,9 +461,8 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
               <span className="relative block">
                 <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-cocm-slate">£</span>
                 <input
-                  type="number"
-                  min={dialog.mode === 'payment' ? '0.01' : undefined}
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
