@@ -180,7 +180,9 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
   const unitPrice = typedMode
     ? priceForIdentity(
         { ...prices, breakfast_price: 0, lunch_price: 0, dinner_price: 0, currency: 'GBP', transfer_info: '' },
-        guestIdentity
+        // When the typed name matches an existing roster entry, the server
+        // reuses it — price with the stored identity, not the selector's.
+        matchedDiner ? matchedDiner.identity : guestIdentity
       )
     : selectedDiner
       ? priceForIdentity(

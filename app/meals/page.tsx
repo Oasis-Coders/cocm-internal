@@ -59,7 +59,7 @@ async function loadPageData(userId: string): Promise<PageData> {
       { data: signupRows },
       { data: mySignupRows },
       { data: myDinerRows },
-      { data: recentSignupRows },
+      { data: recentContactRows },
     ] = await Promise.all([
       supabase.from('meal_settings').select('*').eq('id', 1).maybeSingle(),
       supabase
@@ -89,26 +89,25 @@ async function loadPageData(userId: string): Promise<PageData> {
         .order('meal_date', { ascending: true }),
       supabase.from('meal_diners').select('id').eq('user_id', userId),
       // Names this account has booked before (for one-tap re-booking of guests).
+      // meal_diner_contacts persists across booking cancellations.
       supabase
-        .from('meal_signups')
-        .select('diner_id, created_at')
-        .eq('booked_by', userId)
-        .order('created_at', { ascending: false })
-        .limit(60),
+        .from('meal_diner_contacts')
+        .select('diner_id, last_booked_at')
+        .eq('user_id', userId)
+        .order('last_booked_at', { ascending: false })
+        .limit(8),
     ]);
 
     if (!dayRows || !dinerRows || !signupRows) return fallback;
 
     // Most-recently booked diners for this account, excluding their own linked
-    // diner — these become the "names I've booked" quick chips.
+    // diner — these become the "names I've booked" quick chips. Contacts are
+    // already unique per account+diner, ordered by most recent booking.
     const dinerById = new Map(((dinerRows ?? []) as MealDiner[]).map((d) => [d.id, d]));
-    const seenRecent = new Set<string>();
     const recentDiners: MealDiner[] = [];
-    for (const row of (recentSignupRows ?? []) as Array<{ diner_id: string | null }>) {
-      const id = row.diner_id;
-      if (!id || seenRecent.has(id)) continue;
-      seenRecent.add(id);
-      const d = dinerById.get(id);
+    for (const row of (recentContactRows ?? []) as Array<{ diner_id: string | null }>) {
+      const d = row.diner_id ? dinerById.get(row.diner_id) : undefined;
+      // dinerRows only carries active diners, so deactivated entries drop out.
       if (d && d.user_id !== userId) recentDiners.push(d);
       if (recentDiners.length >= 8) break;
     }

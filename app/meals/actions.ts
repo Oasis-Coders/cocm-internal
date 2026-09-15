@@ -118,6 +118,22 @@ async function bookMealForDiner(
     return { ok: false, error: 'insert-failed' };
   }
 
+  // Remember this diner for the booker's one-tap "names I've booked" chips.
+  // Stored separately from meal_signups so it survives booking cancellation.
+  // Auxiliary: never fail the booking over it.
+  try {
+    await supabase.from('meal_diner_contacts').upsert(
+      {
+        user_id: session.userId,
+        diner_id: diner.id,
+        last_booked_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,diner_id' }
+    );
+  } catch {
+    // ignore
+  }
+
   revalidatePath('/meals');
   revalidatePath('/meals/stats');
   return { ok: true };
