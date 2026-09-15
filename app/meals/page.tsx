@@ -77,6 +77,8 @@ async function loadPageData(userId: string): Promise<PageData> {
         breakfast_price: Number(settingsRow?.breakfast_price ?? 0),
         lunch_price: Number(settingsRow?.lunch_price ?? 0),
         dinner_price: Number(settingsRow?.dinner_price ?? 0),
+        price_staff: Number(settingsRow?.price_staff ?? 3),
+        price_other: Number(settingsRow?.price_other ?? 5),
         currency: (settingsRow?.currency as string) ?? 'GBP',
         transfer_info: (settingsRow?.transfer_info as string) ?? '',
       },

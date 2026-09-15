@@ -33,20 +33,18 @@ function isValidDate(value: string): boolean {
 export async function updateMealPrices(formData: FormData) {
   const { session, supabase } = await requireMealAdmin();
 
-  const breakfast = parsePrice(formData.get('breakfast'));
-  const lunch = parsePrice(formData.get('lunch'));
-  const dinner = parsePrice(formData.get('dinner'));
+  const priceStaff = parsePrice(formData.get('price_staff'));
+  const priceOther = parsePrice(formData.get('price_other'));
 
-  if (breakfast === null || lunch === null || dinner === null) {
+  if (priceStaff === null || priceOther === null) {
     redirect('/meals/manage?error=invalid-price');
   }
 
   await supabase
     .from('meal_settings')
     .update({
-      breakfast_price: breakfast,
-      lunch_price: lunch,
-      dinner_price: dinner,
+      price_staff: priceStaff,
+      price_other: priceOther,
       updated_by: session.userId,
       updated_at: new Date().toISOString(),
     })
@@ -151,6 +149,7 @@ export type MealDayInput = {
   breakfast: boolean;
   lunch: boolean;
   dinner: boolean;
+  campDay: boolean;
   note: string | null;
 };
 
@@ -185,6 +184,7 @@ export async function saveMealDay(input: MealDayInput): Promise<{ ok: boolean; e
       breakfast_available: !!input.breakfast,
       lunch_available: !!input.lunch,
       dinner_available: !!input.dinner,
+      is_camp_day: !!input.campDay,
       note: sanitizeNote(input.note),
     },
     { onConflict: 'meal_date' }
@@ -221,6 +221,7 @@ export async function saveMealDayRange(input: {
   breakfast: boolean;
   lunch: boolean;
   dinner: boolean;
+  campDay: boolean;
 }): Promise<{ ok: boolean; error?: string; count?: number }> {
   const { supabase } = await requireMealAdmin();
 
@@ -243,6 +244,7 @@ export async function saveMealDayRange(input: {
     breakfast_available: !!input.breakfast,
     lunch_available: !!input.lunch,
     dinner_available: !!input.dinner,
+    is_camp_day: !!input.campDay,
     note: noteByDate.get(meal_date) ?? null,
   }));
 
@@ -461,4 +463,54 @@ export async function removeMealPayment(input: {
   revalidatePath('/meals/manage');
   revalidatePath('/meals');
   return { ok: true };
+}
+
+// ── Diner roster (admin-maintained list of everyone eating at the center) ──
+
+const validIdentities = ['staff', 'staff_family', 'friend', 'camp_mate', 'other'] as const;
+
+function sanitizeName(value: FormDataEntryValue | string | null): string | null {
+  const name = String(value ?? '').trim().slice(0, 80).replace(/\s+/g, ' ');
+  return name ? name : null;
+}
+
+/** Add a person to the diner roster. */
+export async function addDiner(formData: FormData) {
+  const { session, supabase } = await requireMealAdmin();
+
+  const name = sanitizeName(formData.get('name'));
+  const identity = String(formData.get('identity') ?? 'other');
+  const allergens = String(formData.get('allergens') ?? '').trim().slice(0, 200);
+
+  if (!name || !(validIdentities as readonly string[]).includes(identity)) {
+    redirect('/meals/manage?error=invalid-diner');
+  }
+
+  await supabase.from('meal_diners').insert({
+    name,
+    identity,
+    allergens,
+    created_by: session.userId,
+  });
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals');
+  redirect('/meals/manage?saved=1#roster');
+}
+
+/** Activate / deactivate a roster entry (deactivated names hide from the dropdown). */
+export async function setDinerActive(dinerId: string, active: boolean) {
+  const { supabase } = await requireMealAdmin();
+
+  if (!isValidUuid(dinerId)) return { ok: false as const };
+
+  const { error } = await supabase
+    .from('meal_diners')
+    .update({ is_active: active })
+    .eq('id', dinerId);
+  if (error) return { ok: false as const };
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals');
+  return { ok: true as const };
 }

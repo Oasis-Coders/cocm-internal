@@ -84,7 +84,7 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
   const dayMap = useMemo(() => new Map(days.map((d) => [d.meal_date, d])), [days]);
 
   // Editor form state, synced whenever the selection changes.
-  const [editor, setEditor] = useState({ breakfast: true, lunch: true, dinner: true, note: '' });
+  const [editor, setEditor] = useState({ breakfast: true, lunch: true, dinner: true, campDay: false, note: '' });
   useEffect(() => {
     if (!selection) return;
     setConfirming(null);
@@ -94,6 +94,7 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
         breakfast: existing ? existing.breakfast_available : true,
         lunch: existing ? existing.lunch_available : true,
         dinner: existing ? existing.dinner_available : true,
+        campDay: existing ? existing.is_camp_day : false,
         note: existing?.note ?? '',
       });
     } else {
@@ -109,6 +110,7 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
         breakfast: seed ? seed.breakfast_available : true,
         lunch: seed ? seed.lunch_available : true,
         dinner: seed ? seed.dinner_available : true,
+        campDay: seed ? seed.is_camp_day : false,
         note: '',
       });
     }
@@ -313,6 +315,16 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
                     {d}
                     {isToday && !isEndpoint ? <span className="text-cocm-red"> •</span> : null}
                   </span>
+                  {day?.is_camp_day ? (
+                    <span
+                      title={t.campDay}
+                      className={`rounded px-1 text-[10px] font-bold leading-tight ${
+                        isEndpoint ? 'bg-white/25 text-white' : 'bg-cocm-red/10 text-cocm-red'
+                      }`}
+                    >
+                      {lang === 'zh' ? '营会' : 'CAMP'}
+                    </span>
+                  ) : null}
                   {day ? (
                     <span className="flex items-center gap-1">
                       {mealTypes.map((mt) => {
@@ -364,6 +376,12 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
               <span className="font-semibold text-cocm-red">•</span>
               {t.today}
             </span>
+            <span className="flex items-center gap-1.5">
+              <span className="rounded bg-cocm-red/10 px-1 text-[10px] font-bold text-cocm-red">
+                {lang === 'zh' ? '营会' : 'CAMP'}
+              </span>
+              {t.campDay}
+            </span>
           </div>
         </div>
 
@@ -412,6 +430,19 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
                     {mealLabel(mt)}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  aria-pressed={editor.campDay}
+                  onClick={() => setEditor((e) => ({ ...e, campDay: !e.campDay }))}
+                  title={t.campDayHint}
+                  className={`flex items-center gap-1.5 rounded-[10px] border px-3 py-2 text-sm font-semibold transition active:scale-[0.97] ${
+                    editor.campDay
+                      ? 'border-cocm-red bg-cocm-red text-white shadow-red-glow'
+                      : 'border-cocm-ink/15 bg-white text-cocm-slate hover:border-cocm-ink/30'
+                  }`}
+                >
+                  ⛺ {t.campDay}
+                </button>
               </div>
 
               <label className="mt-4 block text-[13px] font-semibold text-cocm-ink">
@@ -436,6 +467,7 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
                       breakfast: editor.breakfast,
                       lunch: editor.lunch,
                       dinner: editor.dinner,
+                      campDay: editor.campDay,
                       note: editor.note || null,
                     })
                   )
@@ -515,6 +547,19 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
                     {mealLabel(mt)}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  aria-pressed={editor.campDay}
+                  onClick={() => setEditor((e) => ({ ...e, campDay: !e.campDay }))}
+                  title={t.campDayHint}
+                  className={`flex items-center gap-1.5 rounded-[10px] border px-3 py-2 text-sm font-semibold transition active:scale-[0.97] ${
+                    editor.campDay
+                      ? 'border-cocm-red bg-cocm-red text-white shadow-red-glow'
+                      : 'border-cocm-ink/15 bg-white text-cocm-slate hover:border-cocm-ink/30'
+                  }`}
+                >
+                  ⛺ {t.campDay}
+                </button>
               </div>
 
               <button
@@ -528,6 +573,7 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
                       breakfast: editor.breakfast,
                       lunch: editor.lunch,
                       dinner: editor.dinner,
+                      campDay: editor.campDay,
                     })
                   )
                 }

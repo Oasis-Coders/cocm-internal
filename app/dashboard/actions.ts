@@ -57,7 +57,7 @@ export async function getMealDayHeadcount(date: string): Promise<DayHeadcount> {
   try {
     const [{ data: day }, { data: signups }] = await Promise.all([
       supabase.from('meal_days').select('*').eq('meal_date', date).maybeSingle(),
-      supabase.from('meal_signups').select('meal_type').eq('meal_date', date),
+      supabase.from('meal_signups').select('meal_type, headcount').eq('meal_date', date),
     ]);
 
     if (!day) {
@@ -74,7 +74,7 @@ export async function getMealDayHeadcount(date: string): Promise<DayHeadcount> {
     const counts: Record<MealType, number> = { breakfast: 0, lunch: 0, dinner: 0 };
     for (const row of signups ?? []) {
       const t = row.meal_type as MealType;
-      if (t in counts) counts[t] += 1;
+      if (t in counts) counts[t] += Number(row.headcount) || 1;
     }
 
     return {
