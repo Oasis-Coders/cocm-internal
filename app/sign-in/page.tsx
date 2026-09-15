@@ -24,12 +24,14 @@ async function requestPasswordSignIn(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim();
   const password = String(formData.get('password') ?? '');
   const redirectTo = sanitizeRedirectTo(String(formData.get('redirectTo') ?? '/dashboard'));
+  // Default: stay signed in for a long time (persistent 400-day cookies).
+  const remember = formData.get('remember') === 'on';
 
   if (!email || !password) {
     redirect(`/sign-in?error=missing-fields&redirectTo=${encodeURIComponent(redirectTo)}`);
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient({ sessionOnly: !remember });
 
   if (!supabase) {
     redirect(`/sign-in?error=supabase-unavailable&redirectTo=${encodeURIComponent(redirectTo)}`);
@@ -43,6 +45,14 @@ async function requestPasswordSignIn(formData: FormData) {
   if (error) {
     redirect(`/sign-in?error=invalid-credentials&redirectTo=${encodeURIComponent(redirectTo)}`);
   }
+
+  // Persist the choice so token refreshes (middleware) honor it too.
+  const store = await cookies();
+  store.set('cocm_remember', remember ? '1' : '0', {
+    path: '/',
+    maxAge: 400 * 24 * 60 * 60,
+    sameSite: 'lax',
+  });
 
   redirect(redirectTo);
 }

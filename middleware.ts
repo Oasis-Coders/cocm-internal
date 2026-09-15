@@ -32,6 +32,18 @@ export async function middleware(request: NextRequest) {
     options?: Parameters<typeof response.cookies.set>[2];
   };
 
+  // "Remember me" choice from sign-in: '0' means session-only cookies.
+  const rememberChoice = request.cookies.get('cocm_remember')?.value;
+  const sessionOnly = rememberChoice === '0';
+
+  const stripPersistent = (opts?: CookieToSet['options']) => {
+    if (!sessionOnly || !opts) return opts;
+    const rest = { ...(opts as Record<string, unknown>) };
+    delete rest.maxAge;
+    delete rest.expires;
+    return rest as CookieToSet['options'];
+  };
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -43,7 +55,7 @@ export async function middleware(request: NextRequest) {
         setAll(cookiesToSet: CookieToSet[]) {
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value);
-            response.cookies.set(name, value, options);
+            response.cookies.set(name, value, stripPersistent(options));
           });
         },
       },

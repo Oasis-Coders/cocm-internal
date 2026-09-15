@@ -5,6 +5,9 @@ import { hasSupabaseEnv } from '@/lib/supabase/env';
 
 export async function createSupabaseServerClient(options?: {
   auth?: { flowType?: 'implicit' | 'pkce' };
+  /** When true, auth cookies are set as browser-session cookies (no maxAge),
+   *  so the login ends when the browser closes. Default is persistent. */
+  sessionOnly?: boolean;
 }) {
   if (!hasSupabaseEnv()) {
     return null;
@@ -15,6 +18,14 @@ export async function createSupabaseServerClient(options?: {
     name: string;
     value: string;
     options?: Parameters<typeof cookieStore.set>[2];
+  };
+
+  const stripPersistent = (opts?: CookieToSet['options']) => {
+    if (!options?.sessionOnly || !opts) return opts;
+    const rest = { ...(opts as Record<string, unknown>) };
+    delete rest.maxAge;
+    delete rest.expires;
+    return rest as CookieToSet['options'];
   };
 
   return createServerClient(
@@ -28,7 +39,7 @@ export async function createSupabaseServerClient(options?: {
         setAll(cookiesToSet: CookieToSet[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
+              cookieStore.set(name, value, stripPersistent(options));
             });
           } catch {
             // Server Components can read session cookies but cannot refresh them.

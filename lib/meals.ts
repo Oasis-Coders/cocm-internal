@@ -43,9 +43,16 @@ export type MealSettings = {
 };
 
 export type MealSignup = {
+  id: string;
   meal_date: string;
   meal_type: MealType;
   price: number;
+  diner_id: string | null;
+  display_name: string | null;
+  identity: DinerIdentity | null;
+  headcount: number;
+  booked_by: string | null;
+  user_id: string | null;
 };
 
 export const defaultMealSettings: MealSettings = {

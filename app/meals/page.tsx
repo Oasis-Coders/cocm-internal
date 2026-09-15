@@ -13,15 +13,19 @@ import {
   monthBounds,
   todayIso,
   type MealDay,
+  type MealDiner,
   type MealSettings,
   type MealSignup,
 } from '@/lib/meals';
-import { MealSignupList } from '@/app/meals/meal-signup-list';
+import { MealSignupCalendar } from '@/app/meals/meal-signup-calendar';
+import { MyBookings } from '@/app/meals/my-bookings';
 
 type PageData = {
   settings: MealSettings;
   days: MealDay[];
+  diners: MealDiner[];
   signups: MealSignup[];
+  mySignups: MealSignup[];
   paidThisMonth: number;
   ready: boolean;
 };
@@ -30,7 +34,9 @@ async function loadPageData(userId: string): Promise<PageData> {
   const fallback: PageData = {
     settings: defaultMealSettings,
     days: [],
+    diners: [],
     signups: [],
+    mySignups: [],
     paidThisMonth: 0,
     ready: false,
   };
@@ -40,37 +46,68 @@ async function loadPageData(userId: string): Promise<PageData> {
 
   try {
     const { year, month } = currentYearMonth();
-    const { start } = monthBounds(year, month);
+    const { start, end } = monthBounds(year, month);
     const today = todayIso();
-
     const period = `${year}-${String(month).padStart(2, '0')}`;
-    const [{ data: settingsRow }, { data: dayRows }, { data: signupRows }, { data: paymentRows }] = await Promise.all([
+
+    const [
+      { data: settingsRow },
+      { data: dayRows },
+      { data: dinerRows },
+      { data: signupRows },
+      { data: mySignupRows },
+      { data: myDinerRows },
+    ] = await Promise.all([
       supabase.from('meal_settings').select('*').eq('id', 1).maybeSingle(),
       supabase
         .from('meal_days')
-        .select('meal_date, breakfast_available, lunch_available, dinner_available, note')
+        .select('meal_date, breakfast_available, lunch_available, dinner_available, is_camp_day, note')
         .gte('meal_date', today)
         .order('meal_date', { ascending: true })
-        .limit(90),
+        .limit(120),
+      supabase
+        .from('meal_diners')
+        .select('id, name, identity, allergens, is_active, user_id')
+        .eq('is_active', true)
+        .order('name', { ascending: true })
+        .limit(2000),
       supabase
         .from('meal_signups')
-        .select('meal_date, meal_type, price')
-        .eq('user_id', userId)
-        .gte('meal_date', start)
-        .order('meal_date', { ascending: true }),
+        .select('id, meal_date, meal_type, price, diner_id, display_name, identity, headcount, booked_by, user_id')
+        .gte('meal_date', today)
+        .order('meal_date', { ascending: true })
+        .limit(5000),
       supabase
+        .from('meal_signups')
+        .select('id, meal_date, meal_type, price, diner_id, display_name, identity, headcount, booked_by, user_id')
+        .or(`booked_by.eq.${userId},user_id.eq.${userId}`)
+        .gte('meal_date', start)
+        .lt('meal_date', end)
+        .order('meal_date', { ascending: true }),
+      supabase.from('meal_diners').select('id').eq('user_id', userId),
+    ]);
+
+    if (!dayRows || !dinerRows || !signupRows) return fallback;
+
+    const myDinerIds = ((myDinerRows ?? []) as Array<{ id: string }>).map((r) => r.id);
+    let paidRows: Array<{ amount: number | string }> = [];
+    if (myDinerIds.length > 0) {
+      const { data } = await supabase
+        .from('meal_payments')
+        .select('amount')
+        .eq('period', period)
+        .or(`user_id.eq.${userId},diner_id.in.(${myDinerIds.join(',')})`);
+      paidRows = (data ?? []) as Array<{ amount: number | string }>;
+    } else {
+      const { data } = await supabase
         .from('meal_payments')
         .select('amount')
         .eq('user_id', userId)
-        .eq('period', period),
-    ]);
+        .eq('period', period);
+      paidRows = (data ?? []) as Array<{ amount: number | string }>;
+    }
 
-    if (!dayRows || !signupRows) return fallback;
-
-    const paidThisMonth = ((paymentRows ?? []) as Array<{ amount: number | string }>).reduce(
-      (sum, r) => sum + (Number(r.amount) || 0),
-      0
-    );
+    const paidThisMonth = paidRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
 
     return {
       settings: {
@@ -83,9 +120,16 @@ async function loadPageData(userId: string): Promise<PageData> {
         transfer_info: (settingsRow?.transfer_info as string) ?? '',
       },
       days: dayRows as MealDay[],
+      diners: (dinerRows ?? []) as MealDiner[],
       signups: (signupRows as MealSignup[]).map((s) => ({
         ...s,
         price: Number(s.price) || 0,
+        headcount: Number(s.headcount) || 1,
+      })),
+      mySignups: ((mySignupRows ?? []) as MealSignup[]).map((s) => ({
+        ...s,
+        price: Number(s.price) || 0,
+        headcount: Number(s.headcount) || 1,
       })),
       paidThisMonth: Math.round(paidThisMonth * 100) / 100,
       ready: true,
@@ -110,13 +154,10 @@ export default async function MealsPage() {
   }
 
   const data = await loadPageData(session.userId);
-  const { year, month } = currentYearMonth();
-  const { start, end } = monthBounds(year, month);
 
-  const monthSignups = data.signups.filter((s) => s.meal_date >= start && s.meal_date < end);
-  const monthTotal = monthSignups.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
-  const monthOutstanding = Math.round((monthTotal - data.paidThisMonth) * 100) / 100;
-  const signedKeys = data.signups.map((s) => `${s.meal_date}|${s.meal_type}`);
+  const monthOwed = data.mySignups.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
+  const monthOutstanding = Math.round((monthOwed - data.paidThisMonth) * 100) / 100;
+  const monthHeadcount = data.mySignups.reduce((sum, s) => sum + (Number(s.headcount) || 1), 0);
   const isAdmin = session.role === 'admin' || session.role === 'super_admin';
 
   return (
@@ -140,10 +181,10 @@ export default async function MealsPage() {
                   {formatMoney(monthOutstanding, data.settings.currency)}
                 </p>
                 <p className="mt-2 text-sm text-white/60">
-                  {t.outstanding} · {monthSignups.length} {t.count}
+                  {t.outstanding} · {monthHeadcount} {t.count}
                 </p>
                 <p className="mt-1 text-xs text-white/45">
-                  {t.owed} {formatMoney(monthTotal, data.settings.currency)} · {t.paid}{' '}
+                  {t.owed} {formatMoney(monthOwed, data.settings.currency)} · {t.paid}{' '}
                   {formatMoney(data.paidThisMonth, data.settings.currency)}
                 </p>
               </div>
@@ -164,7 +205,14 @@ export default async function MealsPage() {
           </div>
 
           {isAdmin ? (
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex justify-end gap-2">
+              <Link
+                href="/meals/stats"
+                className="inline-flex items-center gap-1.5 rounded-[12px] border border-cocm-ink/15 bg-white px-4 py-2.5 text-sm font-semibold text-cocm-ink transition-all hover:border-cocm-ink/30"
+              >
+                {t.statsTitle}
+                <span aria-hidden="true">→</span>
+              </Link>
               <Link
                 href="/meals/manage"
                 className="inline-flex items-center gap-1.5 rounded-[12px] bg-cocm-red px-4 py-2.5 text-sm font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark"
@@ -176,28 +224,19 @@ export default async function MealsPage() {
           ) : null}
 
           <div className="mt-8">
-            <div className="mb-4 flex items-baseline justify-between">
-              <h3 className="font-serif text-2xl tracking-tight text-cocm-ink">{t.upcomingTitle}</h3>
-              <p className="text-sm text-cocm-slate">{t.tapToToggle}</p>
-            </div>
-            {data.days.length === 0 ? (
-              <EmptyState title={t.upcomingTitle} description={t.noUpcoming} />
-            ) : (
-              <MealSignupList
-                days={data.days}
-                initialSigned={signedKeys}
-                settings={data.settings}
-                labels={{
-                  breakfast: t.breakfast,
-                  lunch: t.lunch,
-                  dinner: t.dinner,
-                  signedUp: t.signedUp,
-                  notAvailable: t.notAvailable,
-                  perPerson: t.perPerson,
-                }}
-                lang={lang}
-              />
-            )}
+            <MealSignupCalendar
+              days={data.days}
+              diners={data.diners}
+              signups={data.signups}
+              myUserId={session.userId}
+              prices={{ price_staff: data.settings.price_staff, price_other: data.settings.price_other }}
+              t={t}
+              lang={lang}
+            />
+          </div>
+
+          <div className="mt-8">
+            <MyBookings signups={data.mySignups} currency={data.settings.currency} t={t} lang={lang} />
           </div>
         </>
       )}

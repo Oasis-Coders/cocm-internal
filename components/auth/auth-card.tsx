@@ -110,6 +110,21 @@ export async function AuthCard({ mode, action, redirectTo, status, message, forg
         >
           {copy.submit}
         </button>
+
+        {mode === 'sign-in' ? (
+          <label className="flex cursor-pointer items-center gap-2.5 text-sm text-cocm-slate">
+            <input
+              type="checkbox"
+              name="remember"
+              value="on"
+              defaultChecked
+              className="h-4 w-4 rounded accent-cocm-blue"
+            />
+            {t.rememberMe}
+          </label>
+        ) : (
+          <input type="hidden" name="remember" value="on" />
+        )}
       </form>
 
       <p className="mt-6 text-center text-sm text-cocm-slate">
