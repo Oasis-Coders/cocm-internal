@@ -115,7 +115,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
           <h3 className="font-serif text-xl text-cocm-ink">{t.pricesTitle}</h3>
           <p className="mt-1 text-sm text-cocm-slate">{t.pricesDesc}</p>
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1 text-sm">
+            <label className="flex min-w-0 flex-col gap-1 text-sm">
               <span className="font-semibold text-cocm-ink">{t.priceStaff}</span>
               <span className="relative block">
                 <span
@@ -131,12 +131,12 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
                   step="0.01"
                   required
                   defaultValue={settings.price_staff.toFixed(2)}
-                  className={`${inputClass} pl-8`}
+                  className={`${inputClass} w-full min-w-0 pl-8`}
                 />
               </span>
               <span className="text-xs text-cocm-slate">{t.priceStaffHint}</span>
             </label>
-            <label className="flex flex-col gap-1 text-sm">
+            <label className="flex min-w-0 flex-col gap-1 text-sm">
               <span className="font-semibold text-cocm-ink">{t.priceOther}</span>
               <span className="relative block">
                 <span
@@ -152,7 +152,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
                   step="0.01"
                   required
                   defaultValue={settings.price_other.toFixed(2)}
-                  className={`${inputClass} pl-8`}
+                  className={`${inputClass} w-full min-w-0 pl-8`}
                 />
               </span>
               <span className="text-xs text-cocm-slate">{t.priceOtherHint}</span>
