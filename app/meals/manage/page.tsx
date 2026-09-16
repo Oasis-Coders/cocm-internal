@@ -8,6 +8,9 @@ import { getSession } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { translations, type Lang } from '@/lib/i18n/translations';
 import {
+  addDaysIso,
+  defaultMealDay,
+  todayIso,
   type MealDay,
   type MealDiner,
   type MealSettings,
@@ -87,7 +90,25 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
     currency: (settingsRow?.currency as string) ?? 'GBP',
     transfer_info: (settingsRow?.transfer_info as string) ?? '',
   };
-  const days = (dayRows ?? []) as MealDay[];
+  // Merge the Mon–Fri lunch default so the admin sees effective
+  // availability and can override any day. Explicit rows win.
+  const dayMap = new Map<string, MealDay>();
+  for (const d of ((dayRows ?? []) as MealDay[])) dayMap.set(d.meal_date, d);
+  const defaultDates: string[] = [];
+  const todayStr = todayIso();
+  for (let i = 0; i < 180; i++) {
+    const iso = addDaysIso(todayStr, i);
+    if (!dayMap.has(iso)) {
+      const v = defaultMealDay(iso);
+      if (v) {
+        dayMap.set(iso, v);
+        defaultDates.push(iso);
+      }
+    }
+  }
+  const days = [...dayMap.values()].sort((a, b) =>
+    a.meal_date < b.meal_date ? -1 : 1
+  );
   const diners = (dinerRows ?? []) as MealDiner[];
 
   const inputClass =
@@ -191,6 +212,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
       <div className="mt-4">
         <MealCalendar
           days={days}
+          defaultDates={defaultDates}
           signupCounts={signupCounts}
           t={t}
           tc={tc}

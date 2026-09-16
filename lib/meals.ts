@@ -107,3 +107,39 @@ export function todayIso(now = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
+
+/** Add n days to a YYYY-MM-DD date string. */
+export function addDaysIso(dateStr: string, n: number): string {
+  const d = new Date(`${dateStr}T12:00:00`);
+  d.setDate(d.getDate() + n);
+  const pad = (x: number) => String(x).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/**
+ * Default availability rule: Monday–Friday lunch is bookable without an
+ * explicit meal_days row. Weekends have no default. An explicit admin row
+ * always wins, so the admin can still edit any day afterwards.
+ */
+export function isWeekdayDate(dateStr: string): boolean {
+  const dow = new Date(`${dateStr}T12:00:00`).getDay();
+  return dow >= 1 && dow <= 5;
+}
+
+/** Virtual meal day for dates with no explicit row; null = not bookable by default. */
+export function defaultMealDay(dateStr: string): MealDay | null {
+  if (!isWeekdayDate(dateStr)) return null;
+  return {
+    meal_date: dateStr,
+    breakfast_available: false,
+    lunch_available: true,
+    dinner_available: false,
+    is_camp_day: false,
+    note: null,
+  };
+}
+
+/** Explicit admin row wins; otherwise fall back to the weekday default. */
+export function resolveMealDay(dateStr: string, row: MealDay | null | undefined): MealDay | null {
+  return row ?? defaultMealDay(dateStr);
+}

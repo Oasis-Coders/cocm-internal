@@ -7,7 +7,9 @@ import { getSession } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { translations, type Lang } from '@/lib/i18n/translations';
 import {
+  addDaysIso,
   currentYearMonth,
+  defaultMealDay,
   defaultMealSettings,
   formatMoney,
   monthBounds,
@@ -130,7 +132,22 @@ async function loadPageData(userId: string): Promise<PageData> {
       paidRows = (data ?? []) as Array<{ amount: number | string }>;
     }
 
+    // Explicit admin rows win; weekdays without a row fall back to the
+    // default (Mon–Fri lunch bookable). Covers the same ~120-day window
+    // the calendar query loads.
     const paidThisMonth = paidRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const dayMap = new Map<string, MealDay>();
+    for (const d of (dayRows as MealDay[])) dayMap.set(d.meal_date, d);
+    for (let i = 0; i < 120; i++) {
+      const iso = addDaysIso(today, i);
+      if (!dayMap.has(iso)) {
+        const v = defaultMealDay(iso);
+        if (v) dayMap.set(iso, v);
+      }
+    }
+    const days = [...dayMap.values()].sort((a, b) =>
+      a.meal_date < b.meal_date ? -1 : 1
+    );
 
     return {
       settings: {
@@ -142,7 +159,7 @@ async function loadPageData(userId: string): Promise<PageData> {
         currency: (settingsRow?.currency as string) ?? 'GBP',
         transfer_info: (settingsRow?.transfer_info as string) ?? '',
       },
-      days: dayRows as MealDay[],
+      days,
       diners: (dinerRows ?? []) as MealDiner[],
       signups: (signupRows as MealSignup[]).map((s) => ({
         ...s,

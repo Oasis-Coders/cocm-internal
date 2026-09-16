@@ -79,15 +79,18 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
   const [selected, setSelected] = useState<string | null>(null);
 
   // Booking form state.
-  const [dinerId, setDinerId] = useState('');
+  // Booking form state.
+  // Default mode is booking for yourself; "book for others" reveals the
+  // name input. Self = the remembered roster diner for this browser.
+  const [mode, setMode] = useState<'self' | 'others'>('self');
   const [headcount, setHeadcount] = useState(1);
-  const [forOthers, setForOthers] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [myDinerId, setMyDinerId] = useState<string | null>(null);
-  // Typed-name mode: book a guest by typing their name directly.
-  const [nameMode, setNameMode] = useState<'roster' | 'typed'>('roster');
+  // Book-for-others mode: type the diner's name directly.
   const [guestName, setGuestName] = useState('');
   const [guestIdentity, setGuestIdentity] = useState<DinerIdentity>('friend');
+  // Filter text for the pick-yourself roster chip list.
+  const [rosterFilter, setRosterFilter] = useState('');
 
   useEffect(() => {
     try {
@@ -97,13 +100,20 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
     }
   }, []);
 
-  // Preselect remembered name when the diner list loads.
-  useEffect(() => {
-    if (!dinerId && myDinerId && diners.some((d) => d.id === myDinerId)) {
-      setDinerId(myDinerId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myDinerId, diners]);
+  const pickSelf = (id: string) => {
+    setMyDinerId(id);
+    setError(null);
+    try {
+      localStorage.setItem(MY_DINER_KEY, id);
+    } catch { /* ignore */ }
+  };
+  const changeSelf = () => {
+    setMyDinerId(null);
+    setError(null);
+    try {
+      localStorage.removeItem(MY_DINER_KEY);
+    } catch { /* ignore */ }
+  };
 
   // Clear feedback when switching days.
   useEffect(() => {
@@ -167,38 +177,32 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
 
   const selectedDay = selected ? dayMap.get(selected) : undefined;
   const selectedSignups = selected ? signupsByDay.get(selected) ?? [] : [];
-  const selectedDiner = diners.find((d) => d.id === dinerId);
-  const typedMode = nameMode === 'typed';
+  const othersMode = mode === 'others';
+  const selfDiner = myDinerId ? diners.find((d) => d.id === myDinerId) : undefined;
   const typedName = guestName.replace(/\s+/g, ' ').trim();
+  // Roster chips (tap-to-select replaces the old dropdown).
+  const filterText = rosterFilter.trim().toLowerCase();
+  const visibleDiners = filterText
+    ? diners.filter((d) => d.name.toLowerCase().includes(filterText))
+    : diners;
   // If the typed name already exists on the roster, the server reuses it.
-  const matchedDiner = typedMode && typedName
+  const matchedDiner = othersMode && typedName
     ? diners.find((d) => d.name === typedName)
       ?? diners.find((d) => d.name.toLowerCase() === typedName.toLowerCase())
     : undefined;
-  const unitPrice = typedMode
+  const unitPrice = othersMode
     ? priceForIdentity(
         { ...prices, breakfast_price: 0, lunch_price: 0, dinner_price: 0, currency: 'GBP', transfer_info: '' },
         // When the typed name matches an existing roster entry, the server
         // reuses it — price with the stored identity, not the selector's.
         matchedDiner ? matchedDiner.identity : guestIdentity
       )
-    : selectedDiner
+    : selfDiner
       ? priceForIdentity(
           { ...prices, breakfast_price: 0, lunch_price: 0, dinner_price: 0, currency: 'GBP', transfer_info: '' },
-          selectedDiner.identity
+          selfDiner.identity
         )
       : 0;
-
-  const onPickDiner = (id: string) => {
-    setDinerId(id);
-    setError(null);
-    // If they pick a different name than their remembered self, it's for others.
-    if (myDinerId && id && id !== myDinerId) {
-      setForOthers(true);
-    } else if (!myDinerId) {
-      setForOthers(false);
-    }
-  };
 
   const errorText = (code: string | null): string | null => {
     if (!code) return null;
@@ -211,12 +215,12 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
   };
 
   const book = (mealType: MealType) => {
-    if (typedMode) {
+    if (othersMode) {
       if (!typedName) {
         setError(t.typeNameFirst);
         return;
       }
-    } else if (!dinerId) {
+    } else if (!selfDiner) {
       setError(t.pickNameFirst);
       return;
     }
@@ -225,7 +229,7 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
     setNotice(null);
     setPendingKey(key);
     startTransition(async () => {
-      const res = typedMode
+      const res = othersMode
         ? await signupGuestMeal({
             guestName: typedName,
             identity: guestIdentity,
@@ -234,7 +238,7 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
             headcount,
           })
         : await signupMeal({
-            dinerId,
+            dinerId: selfDiner!.id,
             mealDate: selected!,
             mealType,
             headcount,
@@ -242,13 +246,6 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
       if (!res.ok) {
         setError(errorText(res.error ?? null));
       } else {
-        // Remember self when booking as self from the roster.
-        if (!typedMode && !forOthers) {
-          setMyDinerId(dinerId);
-          try {
-            localStorage.setItem(MY_DINER_KEY, dinerId);
-          } catch { /* ignore */ }
-        }
         // Immediate feedback even while the list refreshes in the background.
         // Keep the typed guest name so the same person can be booked for
         // another meal with one more tap.
@@ -362,12 +359,6 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
               <span className="rounded-full bg-cocm-ink/[0.06] px-1.5 text-[10px] font-semibold">3</span>
               {lang === 'zh' ? '报名人次' : 'signups'}
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="rounded bg-cocm-red/10 px-1 text-[10px] font-bold text-cocm-red">
-                {lang === 'zh' ? '营会' : 'CAMP'}
-              </span>
-              {t.campDay}
-            </span>
           </div>
         </div>
 
@@ -393,24 +384,24 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                 <p className="mt-1 text-[13px] text-cocm-slate">{selectedDay.note}</p>
               ) : null}
 
-              {/* Who + headcount */}
+              {/* Who: default = book for self; "book for others" reveals name input */}
               <div className="mt-4">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[13px] font-semibold text-cocm-ink">{t.bookFor}</span>
                   <div className="flex rounded-[10px] bg-cocm-ink/[0.06] p-0.5 text-xs font-semibold">
-                    {(['roster', 'typed'] as const).map((m) => (
+                    {(['self', 'others'] as const).map((m) => (
                       <button
                         key={m}
                         type="button"
-                        onClick={() => { setNameMode(m); setError(null); }}
-                        className={`rounded-[8px] px-2.5 py-1.5 transition ${nameMode === m ? 'bg-white text-cocm-ink shadow-sm' : 'text-cocm-slate hover:text-cocm-ink'}`}
+                        onClick={() => { setMode(m); setError(null); }}
+                        className={`rounded-[8px] px-2.5 py-1.5 transition ${mode === m ? 'bg-white text-cocm-ink shadow-sm' : 'text-cocm-slate hover:text-cocm-ink'}`}
                       >
-                        {m === 'roster' ? t.nameModeRoster : t.nameModeTyped}
+                        {m === 'self' ? t.modeSelf : t.bookForOthers}
                       </button>
                     ))}
                   </div>
                 </div>
-                {typedMode ? (
+                {othersMode ? (
                   <>
                     <input
                       value={guestName}
@@ -454,19 +445,49 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                       </div>
                     ) : null}
                   </>
+                ) : selfDiner ? (
+                  <div className="mt-2 flex items-center justify-between gap-2 rounded-[12px] bg-cocm-blue/[0.07] px-3 py-2.5">
+                    <p className="text-sm font-semibold text-cocm-ink">
+                      {selfDiner.name}
+                      <span className="font-normal text-cocm-slate"> · {identityLabel(selfDiner.identity)}</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={changeSelf}
+                      className="shrink-0 text-xs font-semibold text-cocm-blue underline-offset-2 hover:underline"
+                    >
+                      {t.changeSelf}
+                    </button>
+                  </div>
                 ) : (
-                  <select
-                    value={dinerId}
-                    onChange={(e) => onPickDiner(e.target.value)}
-                    className="mt-2 h-11 w-full rounded-[12px] border-[1.5px] border-cocm-ink/15 bg-white px-3 text-[15px] font-normal text-cocm-ink outline-none transition focus:border-cocm-blue focus:ring-2 focus:ring-cocm-blue/20"
-                  >
-                    <option value="">{t.pickName}</option>
-                    {diners.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} · {identityLabel(d.identity)}
-                      </option>
-                    ))}
-                  </select>
+                  <>
+                    <p className="mt-2 text-[13px] font-semibold text-cocm-ink">{t.pickYourselfTitle}</p>
+                    <p className="mt-0.5 text-xs text-cocm-slate">{t.pickYourselfHint}</p>
+                    {diners.length > 8 ? (
+                      <input
+                        value={rosterFilter}
+                        onChange={(e) => setRosterFilter(e.target.value)}
+                        placeholder={t.rosterNameFilter}
+                        className="mt-2 h-10 w-full rounded-[12px] border-[1.5px] border-cocm-ink/15 bg-white px-3 text-sm text-cocm-ink outline-none transition focus:border-cocm-blue"
+                      />
+                    ) : null}
+                    {visibleDiners.length === 0 ? (
+                      <p className="mt-2 text-sm text-cocm-slate">{t.rosterNoMatch}</p>
+                    ) : (
+                      <div className="mt-2 flex max-h-44 flex-wrap gap-1.5 overflow-y-auto">
+                        {visibleDiners.map((d) => (
+                          <button
+                            key={d.id}
+                            type="button"
+                            onClick={() => pickSelf(d.id)}
+                            className="rounded-full border border-cocm-ink/15 bg-white px-3 py-1.5 text-[13px] font-semibold text-cocm-ink transition hover:border-cocm-blue/50 hover:text-cocm-blue active:scale-95"
+                          >
+                            {d.name} · {identityLabel(d.identity)}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -489,21 +510,9 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                 </div>
               </div>
 
-              {typedMode ? null : (
-                <label className="mt-3 flex cursor-pointer items-center gap-2.5 text-sm text-cocm-ink">
-                  <input
-                    type="checkbox"
-                    checked={forOthers}
-                    onChange={(e) => setForOthers(e.target.checked)}
-                    className="h-4 w-4 rounded accent-cocm-blue"
-                  />
-                  {t.bookForOthers}
-                </label>
-              )}
-
-              {selectedDiner?.allergens ? (
+              {(othersMode ? matchedDiner : selfDiner)?.allergens ? (
                 <p className="mt-2 rounded-[10px] bg-amber-100/70 px-3 py-2 text-xs font-semibold text-amber-800">
-                  ⚠ {t.allergenOnFile}: {selectedDiner.allergens}
+                  ⚠ {t.allergenOnFile}: {(othersMode ? matchedDiner : selfDiner)!.allergens}
                 </p>
               ) : null}
 
@@ -520,9 +529,9 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
               <div className="mt-4 space-y-3">
                 {mealTypes.filter((mt) => isMealAvailable(selectedDay, mt)).map((mt) => {
                   const list = selectedSignups.filter((s) => s.meal_type === mt);
-                  const alreadyBooked = typedMode
+                  const alreadyBooked = othersMode
                     ? !!typedName && list.some((s) => (s.display_name ?? '').trim() === typedName)
-                    : selectedDiner && list.some((s) => s.diner_id === selectedDiner.id);
+                    : selfDiner && list.some((s) => s.diner_id === selfDiner.id);
                   return (
                     <div key={mt} className="rounded-[12px] border border-cocm-ink/10 bg-white p-3">
                       <div className="flex items-center justify-between">
@@ -530,12 +539,12 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                           <span className={`h-2 w-2 rounded-full ${mealDotColor[mt]}`} />
                           {mealLabel(mt)}
                           <span className="text-xs font-normal text-cocm-slate">
-                            {(typedMode ? !!typedName : !!selectedDiner) ? `${formatMoney(unitPrice, 'GBP')}${t.perPersonSuffix}` : ''}
+                            {(othersMode ? !!typedName : !!selfDiner) ? `${formatMoney(unitPrice, 'GBP')}${t.perPersonSuffix}` : ''}
                           </span>
                         </p>
                         <button
                           type="button"
-                          disabled={pendingKey === `book:${mt}` || (typedMode ? !typedName : !dinerId) || !!alreadyBooked}
+                          disabled={pendingKey === `book:${mt}` || (othersMode ? !typedName : !selfDiner) || !!alreadyBooked}
                           onClick={() => book(mt)}
                           title={alreadyBooked ? t.alreadySignedUp : undefined}
                           className="rounded-[10px] bg-cocm-red px-4 py-2 text-sm font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark active:scale-[0.98] disabled:opacity-40"

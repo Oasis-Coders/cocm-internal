@@ -8,6 +8,7 @@ import {
   dinerIdentities,
   isMealAvailable,
   priceForIdentity,
+  resolveMealDay,
   type DinerIdentity,
   type MealDay,
   type MealSettings,
@@ -61,13 +62,15 @@ async function bookMealForDiner(
     return { ok: false, error: 'invalid-diner' };
   }
 
-  const { data: day } = await supabase
+  const { data: dayRow } = await supabase
     .from('meal_days')
     .select('meal_date, breakfast_available, lunch_available, dinner_available, is_camp_day')
     .eq('meal_date', mealDate)
     .maybeSingle();
 
-  if (!day || !isMealAvailable(day as MealDay, type)) {
+  // Explicit admin row wins; otherwise the Mon–Fri lunch default applies.
+  const day = resolveMealDay(mealDate, dayRow as MealDay | null);
+  if (!day || !isMealAvailable(day, type)) {
     return { ok: false, error: 'not-available' };
   }
 

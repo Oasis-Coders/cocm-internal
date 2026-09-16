@@ -17,6 +17,8 @@ type CommonT = (typeof translations)[Lang]['common'];
 
 type Props = {
   days: MealDay[];
+  /** Dates filled in by the weekday default (no explicit admin row yet). */
+  defaultDates: string[];
   signupCounts: Record<string, number>;
   t: MealsT;
   tc: CommonT;
@@ -61,7 +63,7 @@ function formatMonth(year: number, month: number, lang: Lang) {
   return `${EN_MONTHS[month - 1]} ${year}`;
 }
 
-export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
+export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -82,6 +84,7 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
 
   const today = useMemo(todayIso, []);
   const dayMap = useMemo(() => new Map(days.map((d) => [d.meal_date, d])), [days]);
+  const defaultSet = useMemo(() => new Set(defaultDates), [defaultDates]);
 
   // Editor form state, synced whenever the selection changes.
   const [editor, setEditor] = useState({ breakfast: true, lunch: true, dinner: true, campDay: false, note: '' });
@@ -288,6 +291,7 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
             {cells.map((date, i) => {
               if (!date) return <div key={`empty-${i}`} />;
               const day = dayMap.get(date);
+              const isDefault = defaultSet.has(date);
               const count = signupCounts[date] ?? 0;
               const inRange = selection !== null && date >= selection.start && date <= selection.end;
               const isEndpoint = selection !== null && (date === selection.start || date === selection.end);
@@ -315,6 +319,11 @@ export function MealCalendar({ days, signupCounts, t, tc, lang }: Props) {
                     {d}
                     {isToday && !isEndpoint ? <span className="text-cocm-red"> •</span> : null}
                   </span>
+                  {isDefault && !isEndpoint ? (
+                    <span className="rounded bg-cocm-ink/[0.06] px-1 text-[10px] font-semibold leading-tight text-cocm-slate">
+                      {lang === 'zh' ? '默认' : 'auto'}
+                    </span>
+                  ) : null}
                   {day?.is_camp_day ? (
                     <span
                       title={t.campDay}
