@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache';
 
 import { getSession, type SessionInfo } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import {
   dinerIdentities,
   isMealAvailable,
@@ -75,22 +74,13 @@ async function bookMealForDiner(input: BookCoreInput): Promise<{ ok: boolean; er
 
   if (!dayRow) {
     // No explicit row: materialize the weekday-default row first so the
-    // meal_signups → meal_days foreign key holds. The row matches the
-    // effective default exactly, so this grants no extra availability.
-    const admin = createSupabaseAdminClient();
-    if (!admin) {
-      return { ok: false, error: 'unavailable' };
-    }
-    const { error: dayError } = await admin.from('meal_days').upsert(
-      {
-        meal_date: mealDate,
-        breakfast_available: day.breakfast_available,
-        lunch_available: day.lunch_available,
-        dinner_available: day.dinner_available,
-        is_camp_day: day.is_camp_day ?? false,
-      },
-      { onConflict: 'meal_date' }
-    );
+    // meal_signups → meal_days foreign key holds. The RPC can only ever
+    // insert the canonical default (Mon–Fri lunch), never arbitrary
+    // availability, so this grants nothing extra. Uses the caller's own
+    // client — no service-role key needed.
+    const { error: dayError } = await supabase.rpc('ensure_default_meal_day', {
+      p_date: mealDate,
+    });
     if (dayError) {
       return { ok: false, error: 'insert-failed' };
     }
