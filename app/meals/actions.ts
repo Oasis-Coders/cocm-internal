@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { getSession, type SessionInfo } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import {
   dinerIdentities,
   isMealAvailable,
@@ -72,6 +73,29 @@ async function bookMealForDiner(
   const day = resolveMealDay(mealDate, dayRow as MealDay | null);
   if (!day || !isMealAvailable(day, type)) {
     return { ok: false, error: 'not-available' };
+  }
+
+  if (!dayRow) {
+    // No explicit row: materialize the weekday-default row first so the
+    // meal_signups → meal_days foreign key holds. The row matches the
+    // effective default exactly, so this grants no extra availability.
+    const admin = createSupabaseAdminClient();
+    if (!admin) {
+      return { ok: false, error: 'unavailable' };
+    }
+    const { error: dayError } = await admin.from('meal_days').upsert(
+      {
+        meal_date: mealDate,
+        breakfast_available: day.breakfast_available,
+        lunch_available: day.lunch_available,
+        dinner_available: day.dinner_available,
+        is_camp_day: day.is_camp_day ?? false,
+      },
+      { onConflict: 'meal_date' }
+    );
+    if (dayError) {
+      return { ok: false, error: 'insert-failed' };
+    }
   }
 
   const { data: existing } = await supabase
