@@ -52,12 +52,16 @@ export const translations = {
       createOne: 'Create one',
       signInInstead: 'Sign in instead',
       missingFields: 'Please fill in every required field.',
-      invalidCredentials: 'Sign-in could not be completed. Check your email and password and try again.',
+      invalidCredentials:
+        'Sign-in could not be completed. Check your email and password and try again.',
       signUpFailed: 'Sign-up could not be completed. Please try again.',
-      accountCreated: 'Account created successfully. Sign in with the email and password you just set.',
-      confirmEmail: 'Account created. Check your email to confirm the account before your first sign-in.',
+      accountCreated:
+        'Account created successfully. Sign in with the email and password you just set.',
+      confirmEmail:
+        'Account created. Check your email to confirm the account before your first sign-in.',
       supabaseUnavailable: 'Supabase is not configured in this environment yet.',
-      configureHint: 'Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local, then refresh.',
+      configureHint:
+        'Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local, then refresh.',
       forgotPassword: 'Forgot your password?',
       rememberMe: 'Remember me (stay signed in)',
       forgotPasswordEyebrow: 'Password reset',
@@ -117,8 +121,7 @@ export const translations = {
       pricesTitle: 'Meal prices',
       pricesDesc: 'Identity-based price per meal. New signups use the price at signup time.',
       transferEditTitle: 'Payment details',
-      transferEditDesc:
-        'Shown to everyone on the Meals page, e.g. bank transfer instructions.',
+      transferEditDesc: 'Shown to everyone on the Meals page, e.g. bank transfer instructions.',
       transferPlaceholder: 'e.g. Bank transfer to ...',
       daysTitle: 'Meal days',
       daysDesc: 'Pick the dates meals are served and which meals are available each day.',
@@ -130,7 +133,8 @@ export const translations = {
       statsDesc: 'Daily headcount and per-person monthly costs.',
       // signup calendar
       calendarTitle: 'Signup calendar',
-      calendarHint: 'Tap a day, pick a name, then book. Lunch is the daily default; dinner opens on camp days.',
+      calendarHint:
+        'Tap a day, pick a name, then book. Lunch is the daily default; dinner opens on camp days.',
       bookTitle: 'Book a meal',
       bookFor: 'Name',
       modeSelf: 'Book for myself',
@@ -206,7 +210,8 @@ export const translations = {
       entryDeleted: 'Entry deleted.',
       deleteDay: 'Delete day',
       confirmDeleteDay: 'Delete this meal day and all its signups?',
-      calHint: 'Tap a day to edit it. Drag across days to select a range. On touch screens, swipe sideways across days to select.',
+      calHint:
+        'Tap a day to edit it. Drag across days to select a range. On touch screens, swipe sideways across days to select.',
       today: 'Today',
       selectMonth: 'Select whole month',
       newMealDay: 'New meal day',
@@ -228,7 +233,8 @@ export const translations = {
       priceOtherHint: 'Per meal for everyone else.',
       // diner roster
       rosterTitle: 'Diner roster',
-      rosterDesc: 'Everyone who eats at the center. Staff pick their name from this list when signing up.',
+      rosterDesc:
+        'Everyone who eats at the center. Staff pick their name from this list when signing up.',
       dinerName: 'Name',
       dinerNamePlaceholder: 'e.g. Jane Smith',
       dinerIdentity: 'Identity',
@@ -239,7 +245,8 @@ export const translations = {
       rosterEmpty: 'The roster is empty.',
       deactivate: 'Deactivate',
       activate: 'Activate',
-      rosterInactiveHint: 'Deactivated names are hidden from the signup list, but their history is kept.',
+      rosterInactiveHint:
+        'Deactivated names are hidden from the signup list, but their history is kept.',
       identityStaff: 'Staff',
       identityStaffFamily: 'Staff family',
       identityFriend: 'Friend',
@@ -328,7 +335,8 @@ export const translations = {
       accountCreated: '账号创建成功，请用刚设置的邮箱和密码登录。',
       confirmEmail: '账号已创建，首次登录前请先去邮箱确认。',
       supabaseUnavailable: '当前环境还没有配置 Supabase。',
-      configureHint: '请在 .env.local 中设置 NEXT_PUBLIC_SUPABASE_URL 和 NEXT_PUBLIC_SUPABASE_ANON_KEY 后刷新。',
+      configureHint:
+        '请在 .env.local 中设置 NEXT_PUBLIC_SUPABASE_URL 和 NEXT_PUBLIC_SUPABASE_ANON_KEY 后刷新。',
       forgotPassword: '忘记密码？',
       rememberMe: '记住我（保持登录）',
       forgotPasswordEyebrow: '密码重置',

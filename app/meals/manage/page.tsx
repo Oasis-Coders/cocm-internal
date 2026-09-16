@@ -44,7 +44,10 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
   if (!supabase) {
     return (
       <AppShell title={t.manageTitle} eyebrow={t.manageEyebrow}>
-        <EmptyState title={t.manageTitle} description={translations[lang].auth.supabaseUnavailable} />
+        <EmptyState
+          title={t.manageTitle}
+          description={translations[lang].auth.supabaseUnavailable}
+        />
       </AppShell>
     );
   }
@@ -53,7 +56,9 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
     supabase.from('meal_settings').select('*').eq('id', 1).maybeSingle(),
     supabase
       .from('meal_days')
-      .select('meal_date, breakfast_available, lunch_available, dinner_available, is_camp_day, note')
+      .select(
+        'meal_date, breakfast_available, lunch_available, dinner_available, is_camp_day, note'
+      )
       .order('meal_date', { ascending: true })
       .limit(500),
     supabase
@@ -77,7 +82,10 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
     .gte('meal_date', calStartIso)
     .lte('meal_date', calEndIso);
   const signupCounts: Record<string, number> = {};
-  for (const r of (signupDateRows ?? []) as Array<{ meal_date: string; headcount: number | null }>) {
+  for (const r of (signupDateRows ?? []) as Array<{
+    meal_date: string;
+    headcount: number | null;
+  }>) {
     signupCounts[r.meal_date] = (signupCounts[r.meal_date] ?? 0) + (Number(r.headcount) || 1);
   }
 
@@ -93,7 +101,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
   // Merge the Mon–Fri lunch default so the admin sees effective
   // availability and can override any day. Explicit rows win.
   const dayMap = new Map<string, MealDay>();
-  for (const d of ((dayRows ?? []) as MealDay[])) dayMap.set(d.meal_date, d);
+  for (const d of (dayRows ?? []) as MealDay[]) dayMap.set(d.meal_date, d);
   const defaultDates: string[] = [];
   const todayStr = todayIso();
   for (let i = 0; i < 180; i++) {
@@ -106,9 +114,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
       }
     }
   }
-  const days = [...dayMap.values()].sort((a, b) =>
-    a.meal_date < b.meal_date ? -1 : 1
-  );
+  const days = [...dayMap.values()].sort((a, b) => (a.meal_date < b.meal_date ? -1 : 1));
   const diners = (dinerRows ?? []) as MealDiner[];
 
   const inputClass =
@@ -220,13 +226,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
         />
       </div>
 
-      <RosterManager
-        diners={diners}
-        t={t}
-        tc={tc}
-        lang={lang}
-        inputClass={inputClass}
-      />
+      <RosterManager diners={diners} t={t} tc={tc} lang={lang} inputClass={inputClass} />
 
       <div className="mt-4 rounded-[20px] border border-cocm-ink/10 bg-white p-5 shadow-card md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">

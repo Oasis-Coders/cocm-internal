@@ -34,8 +34,18 @@ const mealDotColor: Record<MealType, string> = {
 };
 
 const EN_MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 function pad(n: number) {
@@ -54,7 +64,20 @@ function todayIso() {
 function formatDay(dateStr: string, lang: Lang) {
   const [, m, d] = dateStr.split('-').map(Number);
   if (lang === 'zh') return `${m}月${d}日`;
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   return `${months[m - 1]} ${d}`;
 }
 
@@ -87,7 +110,13 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
   const defaultSet = useMemo(() => new Set(defaultDates), [defaultDates]);
 
   // Editor form state, synced whenever the selection changes.
-  const [editor, setEditor] = useState({ breakfast: true, lunch: true, dinner: true, campDay: false, note: '' });
+  const [editor, setEditor] = useState({
+    breakfast: true,
+    lunch: true,
+    dinner: true,
+    campDay: false,
+    note: '',
+  });
   useEffect(() => {
     if (!selection) return;
     setConfirming(null);
@@ -139,9 +168,10 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
     return list;
   }, [viewYear, viewMonth]);
 
-  const weekdays = lang === 'zh'
-    ? ['一', '二', '三', '四', '五', '六', '日']
-    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const weekdays =
+    lang === 'zh'
+      ? ['一', '二', '三', '四', '五', '六', '日']
+      : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   const isSingle = selection !== null && selection.start === selection.end;
   const selectedDay = isSingle ? dayMap.get(selection.start) : undefined;
@@ -157,8 +187,14 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
   const goMonth = (delta: number) => {
     let y = viewYear;
     let m = viewMonth + delta;
-    if (m < 1) { m = 12; y -= 1; }
-    if (m > 12) { m = 1; y += 1; }
+    if (m < 1) {
+      m = 12;
+      y -= 1;
+    }
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
     setViewYear(y);
     setViewMonth(m);
   };
@@ -226,8 +262,7 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
     });
   };
 
-  const toggleMeal = (type: MealType) =>
-    setEditor((e) => ({ ...e, [type]: !e[type] }));
+  const toggleMeal = (type: MealType) => setEditor((e) => ({ ...e, [type]: !e[type] }));
 
   const mealLabel = (type: MealType) =>
     type === 'breakfast' ? t.breakfast : type === 'lunch' ? t.lunch : t.dinner;
@@ -239,8 +274,7 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
     ? (() => {
         const [sy, sm, sd] = selection.start.split('-').map(Number);
         const [ey, em, ed] = selection.end.split('-').map(Number);
-        const diff =
-          (Date.UTC(ey, em - 1, ed) - Date.UTC(sy, sm - 1, sd)) / 86400000 + 1;
+        const diff = (Date.UTC(ey, em - 1, ed) - Date.UTC(sy, sm - 1, sd)) / 86400000 + 1;
         return Math.round(diff);
       })()
     : 0;
@@ -253,13 +287,23 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
           <p className="mt-1 text-sm text-cocm-slate">{t.calHint}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => goMonth(-1)} className={navBtn} aria-label="Previous month">
+          <button
+            type="button"
+            onClick={() => goMonth(-1)}
+            className={navBtn}
+            aria-label="Previous month"
+          >
             ‹
           </button>
           <span className="min-w-[120px] text-center font-serif text-lg text-cocm-ink">
             {formatMonth(viewYear, viewMonth, lang)}
           </span>
-          <button type="button" onClick={() => goMonth(1)} className={navBtn} aria-label="Next month">
+          <button
+            type="button"
+            onClick={() => goMonth(1)}
+            className={navBtn}
+            aria-label="Next month"
+          >
             ›
           </button>
           <button type="button" onClick={goToday} className={navBtn}>
@@ -284,7 +328,9 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
         >
           <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold uppercase tracking-[0.1em] text-cocm-slate/70">
             {weekdays.map((w) => (
-              <div key={w} className="py-1.5">{w}</div>
+              <div key={w} className="py-1.5">
+                {w}
+              </div>
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
@@ -293,8 +339,10 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
               const day = dayMap.get(date);
               const isDefault = defaultSet.has(date);
               const count = signupCounts[date] ?? 0;
-              const inRange = selection !== null && date >= selection.start && date <= selection.end;
-              const isEndpoint = selection !== null && (date === selection.start || date === selection.end);
+              const inRange =
+                selection !== null && date >= selection.start && date <= selection.end;
+              const isEndpoint =
+                selection !== null && (date === selection.start || date === selection.end);
               const isToday = date === today;
               const d = Number(date.slice(8, 10));
               return (
@@ -315,7 +363,9 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
                           : 'border-dashed border-cocm-ink/10 bg-cocm-ink/[0.015] text-cocm-slate/60 hover:border-cocm-blue/40 hover:text-cocm-ink'
                   }`}
                 >
-                  <span className={`font-semibold leading-none ${isToday && !isEndpoint ? 'text-cocm-red' : ''}`}>
+                  <span
+                    className={`font-semibold leading-none ${isToday && !isEndpoint ? 'text-cocm-red' : ''}`}
+                  >
                     {d}
                     {isToday && !isEndpoint ? <span className="text-cocm-red"> •</span> : null}
                   </span>
@@ -378,7 +428,9 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
               </span>
             ))}
             <span className="flex items-center gap-1.5">
-              <span className="rounded-full bg-cocm-ink/[0.06] px-1.5 text-[10px] font-semibold">3</span>
+              <span className="rounded-full bg-cocm-ink/[0.06] px-1.5 text-[10px] font-semibold">
+                3
+              </span>
               {lang === 'zh' ? '报名人次' : 'signups'}
             </span>
             <span className="flex items-center gap-1.5">
@@ -435,7 +487,9 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
                         : 'border-cocm-ink/15 bg-white text-cocm-slate hover:border-cocm-ink/30'
                     }`}
                   >
-                    <span className={`h-2 w-2 rounded-full ${editor[mt] ? 'bg-white' : mealDotColor[mt]}`} />
+                    <span
+                      className={`h-2 w-2 rounded-full ${editor[mt] ? 'bg-white' : mealDotColor[mt]}`}
+                    />
                     {mealLabel(mt)}
                   </button>
                 ))}
@@ -552,7 +606,9 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
                         : 'border-cocm-ink/15 bg-white text-cocm-slate hover:border-cocm-ink/30'
                     }`}
                   >
-                    <span className={`h-2 w-2 rounded-full ${editor[mt] ? 'bg-white' : mealDotColor[mt]}`} />
+                    <span
+                      className={`h-2 w-2 rounded-full ${editor[mt] ? 'bg-white' : mealDotColor[mt]}`}
+                    />
                     {mealLabel(mt)}
                   </button>
                 ))}

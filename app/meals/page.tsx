@@ -66,7 +66,9 @@ async function loadPageData(userId: string): Promise<PageData> {
       supabase.from('meal_settings').select('*').eq('id', 1).maybeSingle(),
       supabase
         .from('meal_days')
-        .select('meal_date, breakfast_available, lunch_available, dinner_available, is_camp_day, note')
+        .select(
+          'meal_date, breakfast_available, lunch_available, dinner_available, is_camp_day, note'
+        )
         .gte('meal_date', today)
         .order('meal_date', { ascending: true })
         .limit(120),
@@ -78,13 +80,17 @@ async function loadPageData(userId: string): Promise<PageData> {
         .limit(2000),
       supabase
         .from('meal_signups')
-        .select('id, meal_date, meal_type, price, diner_id, display_name, identity, headcount, booked_by, user_id')
+        .select(
+          'id, meal_date, meal_type, price, diner_id, display_name, identity, headcount, booked_by, user_id'
+        )
         .gte('meal_date', today)
         .order('meal_date', { ascending: true })
         .limit(5000),
       supabase
         .from('meal_signups')
-        .select('id, meal_date, meal_type, price, diner_id, display_name, identity, headcount, booked_by, user_id')
+        .select(
+          'id, meal_date, meal_type, price, diner_id, display_name, identity, headcount, booked_by, user_id'
+        )
         .or(`booked_by.eq.${userId},user_id.eq.${userId}`)
         .gte('meal_date', start)
         .lt('meal_date', end)
@@ -137,7 +143,7 @@ async function loadPageData(userId: string): Promise<PageData> {
     // the calendar query loads.
     const paidThisMonth = paidRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
     const dayMap = new Map<string, MealDay>();
-    for (const d of (dayRows as MealDay[])) dayMap.set(d.meal_date, d);
+    for (const d of dayRows as MealDay[]) dayMap.set(d.meal_date, d);
     for (let i = 0; i < 120; i++) {
       const iso = addDaysIso(today, i);
       if (!dayMap.has(iso)) {
@@ -145,9 +151,7 @@ async function loadPageData(userId: string): Promise<PageData> {
         if (v) dayMap.set(iso, v);
       }
     }
-    const days = [...dayMap.values()].sort((a, b) =>
-      a.meal_date < b.meal_date ? -1 : 1
-    );
+    const days = [...dayMap.values()].sort((a, b) => (a.meal_date < b.meal_date ? -1 : 1));
 
     return {
       settings: {
@@ -271,14 +275,22 @@ export default async function MealsPage() {
               signups={data.signups}
               recentDiners={data.recentDiners}
               myUserId={session.userId}
-              prices={{ price_staff: data.settings.price_staff, price_other: data.settings.price_other }}
+              prices={{
+                price_staff: data.settings.price_staff,
+                price_other: data.settings.price_other,
+              }}
               t={t}
               lang={lang}
             />
           </div>
 
           <div className="mt-8">
-            <MyBookings signups={data.mySignups} currency={data.settings.currency} t={t} lang={lang} />
+            <MyBookings
+              signups={data.mySignups}
+              currency={data.settings.currency}
+              t={t}
+              lang={lang}
+            />
           </div>
         </>
       )}

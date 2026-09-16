@@ -54,9 +54,7 @@ type BookCoreInput = {
  * Shared booking core: availability and duplicate checks, then the
  * insert with identity-based price snapshot. Assumes inputs are validated.
  */
-async function bookMealForDiner(
-  input: BookCoreInput
-): Promise<{ ok: boolean; error?: string }> {
+async function bookMealForDiner(input: BookCoreInput): Promise<{ ok: boolean; error?: string }> {
   const { supabase, session, diner, mealDate, type, headcount } = input;
 
   if (!diner.is_active) {
@@ -172,9 +170,7 @@ export type SignupMealInput = {
  * Book a meal for someone on the roster (yourself or a guest).
  * Price is snapshotted from identity-based pricing at signup time.
  */
-export async function signupMeal(
-  input: SignupMealInput
-): Promise<{ ok: boolean; error?: string }> {
+export async function signupMeal(input: SignupMealInput): Promise<{ ok: boolean; error?: string }> {
   const session = await getSession();
 
   if (!session.isAuthenticated || !session.userId) {
@@ -308,9 +304,7 @@ export async function signupGuestMeal(
 }
 
 /** Cancel a booking you made (or an admin cancelling anything). */
-export async function cancelMealSignup(
-  signupId: string
-): Promise<{ ok: boolean; error?: string }> {
+export async function cancelMealSignup(signupId: string): Promise<{ ok: boolean; error?: string }> {
   const session = await getSession();
 
   if (!session.isAuthenticated || !session.userId) {

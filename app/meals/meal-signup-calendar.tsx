@@ -38,8 +38,18 @@ const mealDotColor: Record<MealType, string> = {
 };
 
 const EN_MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 function pad(n: number) {
@@ -55,7 +65,20 @@ function todayIso() {
 function formatDay(dateStr: string, lang: Lang) {
   const [, m, d] = dateStr.split('-').map(Number);
   if (lang === 'zh') return `${m}月${d}日`;
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   return `${months[m - 1]} ${d}`;
 }
 function formatMonth(year: number, month: number, lang: Lang) {
@@ -65,7 +88,16 @@ function formatMonth(year: number, month: number, lang: Lang) {
 
 const MY_DINER_KEY = 'cocm_my_diner';
 
-export function MealSignupCalendar({ days, diners, signups, recentDiners, myUserId, prices, t, lang }: Props) {
+export function MealSignupCalendar({
+  days,
+  diners,
+  signups,
+  recentDiners,
+  myUserId,
+  prices,
+  t,
+  lang,
+}: Props) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   // Which action is in flight (e.g. `book:lunch`, `cancel:<id>`); only that
@@ -105,14 +137,18 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
     setError(null);
     try {
       localStorage.setItem(MY_DINER_KEY, id);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
   const changeSelf = () => {
     setMyDinerId(null);
     setError(null);
     try {
       localStorage.removeItem(MY_DINER_KEY);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   // Clear feedback when switching days.
@@ -135,7 +171,10 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
   const headcountByDay = useMemo(() => {
     const map = new Map<string, number>();
     for (const [date, list] of signupsByDay) {
-      map.set(date, list.reduce((sum, s) => sum + (Number(s.headcount) || 1), 0));
+      map.set(
+        date,
+        list.reduce((sum, s) => sum + (Number(s.headcount) || 1), 0)
+      );
     }
     return map;
   }, [signupsByDay]);
@@ -150,17 +189,23 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
     return list;
   }, [viewYear, viewMonth]);
 
-  const weekdays = lang === 'zh'
-    ? ['一', '二', '三', '四', '五', '六', '日']
-    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const weekdays =
+    lang === 'zh'
+      ? ['一', '二', '三', '四', '五', '六', '日']
+      : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   const identityLabel = (identity: DinerIdentity | string | null): string => {
     switch (identity) {
-      case 'staff': return t.identityStaff;
-      case 'staff_family': return t.identityStaffFamily;
-      case 'friend': return t.identityFriend;
-      case 'camp_mate': return t.identityCampMate;
-      default: return t.identityOther;
+      case 'staff':
+        return t.identityStaff;
+      case 'staff_family':
+        return t.identityStaffFamily;
+      case 'friend':
+        return t.identityFriend;
+      case 'camp_mate':
+        return t.identityCampMate;
+      default:
+        return t.identityOther;
     }
   };
   const mealLabel = (type: MealType) =>
@@ -169,14 +214,20 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
   const goMonth = (delta: number) => {
     let y = viewYear;
     let m = viewMonth + delta;
-    if (m < 1) { m = 12; y -= 1; }
-    if (m > 12) { m = 1; y += 1; }
+    if (m < 1) {
+      m = 12;
+      y -= 1;
+    }
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
     setViewYear(y);
     setViewMonth(m);
   };
 
   const selectedDay = selected ? dayMap.get(selected) : undefined;
-  const selectedSignups = selected ? signupsByDay.get(selected) ?? [] : [];
+  const selectedSignups = selected ? (signupsByDay.get(selected) ?? []) : [];
   const othersMode = mode === 'others';
   const selfDiner = myDinerId ? diners.find((d) => d.id === myDinerId) : undefined;
   const typedName = guestName.replace(/\s+/g, ' ').trim();
@@ -186,20 +237,35 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
     ? diners.filter((d) => d.name.toLowerCase().includes(filterText))
     : diners;
   // If the typed name already exists on the roster, the server reuses it.
-  const matchedDiner = othersMode && typedName
-    ? diners.find((d) => d.name === typedName)
-      ?? diners.find((d) => d.name.toLowerCase() === typedName.toLowerCase())
-    : undefined;
+  const matchedDiner =
+    othersMode && typedName
+      ? (diners.find((d) => d.name === typedName) ??
+        diners.find((d) => d.name.toLowerCase() === typedName.toLowerCase()))
+      : undefined;
   const unitPrice = othersMode
     ? priceForIdentity(
-        { ...prices, breakfast_price: 0, lunch_price: 0, dinner_price: 0, currency: 'GBP', transfer_info: '' },
+        {
+          ...prices,
+          breakfast_price: 0,
+          lunch_price: 0,
+          dinner_price: 0,
+          currency: 'GBP',
+          transfer_info: '',
+        },
         // When the typed name matches an existing roster entry, the server
         // reuses it — price with the stored identity, not the selector's.
         matchedDiner ? matchedDiner.identity : guestIdentity
       )
     : selfDiner
       ? priceForIdentity(
-          { ...prices, breakfast_price: 0, lunch_price: 0, dinner_price: 0, currency: 'GBP', transfer_info: '' },
+          {
+            ...prices,
+            breakfast_price: 0,
+            lunch_price: 0,
+            dinner_price: 0,
+            currency: 'GBP',
+            transfer_info: '',
+          },
           selfDiner.identity
         )
       : 0;
@@ -207,10 +273,14 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
   const errorText = (code: string | null): string | null => {
     if (!code) return null;
     switch (code) {
-      case 'already-signed-up': return t.alreadySignedUp;
-      case 'not-available': return t.notAvailable;
-      case 'invalid-diner': return t.invalidDiner;
-      default: return t.actionFailed;
+      case 'already-signed-up':
+        return t.alreadySignedUp;
+      case 'not-available':
+        return t.notAvailable;
+      case 'invalid-diner':
+        return t.invalidDiner;
+      default:
+        return t.actionFailed;
     }
   };
 
@@ -282,11 +352,25 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
           <p className="mt-1 text-sm text-cocm-slate">{t.calendarHint}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => goMonth(-1)} className={navBtn} aria-label="Previous month">‹</button>
+          <button
+            type="button"
+            onClick={() => goMonth(-1)}
+            className={navBtn}
+            aria-label="Previous month"
+          >
+            ‹
+          </button>
           <span className="min-w-[120px] text-center font-serif text-lg text-cocm-ink">
             {formatMonth(viewYear, viewMonth, lang)}
           </span>
-          <button type="button" onClick={() => goMonth(1)} className={navBtn} aria-label="Next month">›</button>
+          <button
+            type="button"
+            onClick={() => goMonth(1)}
+            className={navBtn}
+            aria-label="Next month"
+          >
+            ›
+          </button>
         </div>
       </div>
 
@@ -295,7 +379,9 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
         <div>
           <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold uppercase tracking-[0.1em] text-cocm-slate/70">
             {weekdays.map((w) => (
-              <div key={w} className="py-1.5">{w}</div>
+              <div key={w} className="py-1.5">
+                {w}
+              </div>
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
@@ -321,26 +407,38 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                         : 'border-cocm-ink/10 bg-white text-cocm-ink hover:border-cocm-blue/50 hover:bg-cocm-blue/[0.04]'
                   } ${!day || isPast ? 'cursor-default' : 'cursor-pointer'}`}
                 >
-                  <span className={`font-semibold leading-none ${isToday && !isSel ? 'text-cocm-red' : ''}`}>
+                  <span
+                    className={`font-semibold leading-none ${isToday && !isSel ? 'text-cocm-red' : ''}`}
+                  >
                     {d}
                     {isToday && !isSel ? <span className="text-cocm-red"> •</span> : null}
                   </span>
                   {day?.is_camp_day ? (
-                    <span className={`rounded px-1 text-[10px] font-bold leading-tight ${isSel ? 'bg-white/25 text-white' : 'bg-cocm-red/10 text-cocm-red'}`}>
+                    <span
+                      className={`rounded px-1 text-[10px] font-bold leading-tight ${isSel ? 'bg-white/25 text-white' : 'bg-cocm-red/10 text-cocm-red'}`}
+                    >
                       {lang === 'zh' ? '营会' : 'CAMP'}
                     </span>
                   ) : null}
                   {day ? (
                     <span className="flex items-center gap-1">
-                      {mealTypes.filter((mt) => isMealAvailable(day, mt)).map((mt) => (
-                        <span key={mt} title={mealLabel(mt)} className={`h-1.5 w-1.5 rounded-full ${mealDotColor[mt]}`} />
-                      ))}
+                      {mealTypes
+                        .filter((mt) => isMealAvailable(day, mt))
+                        .map((mt) => (
+                          <span
+                            key={mt}
+                            title={mealLabel(mt)}
+                            className={`h-1.5 w-1.5 rounded-full ${mealDotColor[mt]}`}
+                          />
+                        ))}
                     </span>
                   ) : (
                     <span className="text-[10px] opacity-0">·</span>
                   )}
                   {count > 0 ? (
-                    <span className={`rounded-full px-1.5 py-px text-[10px] font-semibold leading-tight ${isSel ? 'bg-white/25 text-white' : 'bg-cocm-ink/[0.06] text-cocm-slate'}`}>
+                    <span
+                      className={`rounded-full px-1.5 py-px text-[10px] font-semibold leading-tight ${isSel ? 'bg-white/25 text-white' : 'bg-cocm-ink/[0.06] text-cocm-slate'}`}
+                    >
                       {count}
                     </span>
                   ) : null}
@@ -356,7 +454,9 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
               </span>
             ))}
             <span className="flex items-center gap-1.5">
-              <span className="rounded-full bg-cocm-ink/[0.06] px-1.5 text-[10px] font-semibold">3</span>
+              <span className="rounded-full bg-cocm-ink/[0.06] px-1.5 text-[10px] font-semibold">
+                3
+              </span>
               {lang === 'zh' ? '报名人次' : 'signups'}
             </span>
           </div>
@@ -366,12 +466,16 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
         <div className="scroll-mt-24 rounded-[16px] border border-cocm-ink/10 bg-cocm-blue/[0.04] p-4 md:p-5">
           {!selected || !selectedDay ? (
             <div className="flex h-full min-h-[220px] flex-col items-center justify-center text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cocm-blue/10 text-xl text-cocm-blue">📅</div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cocm-blue/10 text-xl text-cocm-blue">
+                📅
+              </div>
               <p className="mt-3 text-sm text-cocm-slate">{t.selectDayFirst}</p>
             </div>
           ) : (
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cocm-red">{t.bookTitle}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cocm-red">
+                {t.bookTitle}
+              </p>
               <h4 className="mt-1 flex items-center gap-2 font-serif text-2xl text-cocm-ink">
                 {formatDay(selected, lang)}
                 {selectedDay.is_camp_day ? (
@@ -393,7 +497,10 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                       <button
                         key={m}
                         type="button"
-                        onClick={() => { setMode(m); setError(null); }}
+                        onClick={() => {
+                          setMode(m);
+                          setError(null);
+                        }}
                         className={`rounded-[8px] px-2.5 py-1.5 transition ${mode === m ? 'bg-white text-cocm-ink shadow-sm' : 'text-cocm-slate hover:text-cocm-ink'}`}
                       >
                         {m === 'self' ? t.modeSelf : t.bookForOthers}
@@ -405,7 +512,10 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                   <>
                     <input
                       value={guestName}
-                      onChange={(e) => { setGuestName(e.target.value); setError(null); }}
+                      onChange={(e) => {
+                        setGuestName(e.target.value);
+                        setError(null);
+                      }}
                       placeholder={t.guestNamePlaceholder}
                       maxLength={40}
                       className="mt-2 h-11 w-full rounded-[12px] border-[1.5px] border-cocm-ink/15 bg-white px-3 text-[15px] text-cocm-ink outline-none transition focus:border-cocm-blue focus:ring-2 focus:ring-cocm-blue/20"
@@ -418,7 +528,9 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                         className="h-9 rounded-[10px] border-[1.5px] border-cocm-ink/15 bg-white px-2 text-sm text-cocm-ink outline-none transition focus:border-cocm-blue"
                       >
                         {dinerIdentities.map((id) => (
-                          <option key={id} value={id}>{identityLabel(id)}</option>
+                          <option key={id} value={id}>
+                            {identityLabel(id)}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -435,7 +547,11 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                             <button
                               key={d.id}
                               type="button"
-                              onClick={() => { setGuestName(d.name); setGuestIdentity(d.identity); setError(null); }}
+                              onClick={() => {
+                                setGuestName(d.name);
+                                setGuestIdentity(d.identity);
+                                setError(null);
+                              }}
                               className="rounded-full border border-cocm-ink/15 bg-white px-3 py-1.5 text-[13px] font-semibold text-cocm-ink transition hover:border-cocm-blue/50 hover:text-cocm-blue active:scale-95"
                             >
                               {d.name}
@@ -449,7 +565,10 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                   <div className="mt-2 flex items-center justify-between gap-2 rounded-[12px] bg-cocm-blue/[0.07] px-3 py-2.5">
                     <p className="text-sm font-semibold text-cocm-ink">
                       {selfDiner.name}
-                      <span className="font-normal text-cocm-slate"> · {identityLabel(selfDiner.identity)}</span>
+                      <span className="font-normal text-cocm-slate">
+                        {' '}
+                        · {identityLabel(selfDiner.identity)}
+                      </span>
                     </p>
                     <button
                       type="button"
@@ -461,7 +580,9 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                   </div>
                 ) : (
                   <>
-                    <p className="mt-2 text-[13px] font-semibold text-cocm-ink">{t.pickYourselfTitle}</p>
+                    <p className="mt-2 text-[13px] font-semibold text-cocm-ink">
+                      {t.pickYourselfTitle}
+                    </p>
                     <p className="mt-0.5 text-xs text-cocm-slate">{t.pickYourselfHint}</p>
                     {diners.length > 8 ? (
                       <input
@@ -499,14 +620,20 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                     onClick={() => setHeadcount((h) => Math.max(1, h - 1))}
                     className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-cocm-ink/15 bg-white text-lg font-semibold text-cocm-ink transition active:scale-95"
                     aria-label="decrease"
-                  >−</button>
-                  <span className="min-w-[2ch] text-center text-lg font-bold text-cocm-ink">{headcount}</span>
+                  >
+                    −
+                  </button>
+                  <span className="min-w-[2ch] text-center text-lg font-bold text-cocm-ink">
+                    {headcount}
+                  </span>
                   <button
                     type="button"
                     onClick={() => setHeadcount((h) => Math.min(20, h + 1))}
                     className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-cocm-ink/15 bg-white text-lg font-semibold text-cocm-ink transition active:scale-95"
                     aria-label="increase"
-                  >+</button>
+                  >
+                    +
+                  </button>
                 </div>
               </div>
 
@@ -516,9 +643,7 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
                 </p>
               ) : null}
 
-              {error ? (
-                <p className="mt-2 text-sm font-semibold text-cocm-red">{error}</p>
-              ) : null}
+              {error ? <p className="mt-2 text-sm font-semibold text-cocm-red">{error}</p> : null}
               {notice ? (
                 <p className="mt-2 rounded-[10px] bg-green-50 px-3 py-2 text-sm font-semibold text-green-700">
                   {notice}
@@ -527,68 +652,86 @@ export function MealSignupCalendar({ days, diners, signups, recentDiners, myUser
 
               {/* Meals */}
               <div className="mt-4 space-y-3">
-                {mealTypes.filter((mt) => isMealAvailable(selectedDay, mt)).map((mt) => {
-                  const list = selectedSignups.filter((s) => s.meal_type === mt);
-                  const alreadyBooked = othersMode
-                    ? !!typedName && list.some((s) => (s.display_name ?? '').trim() === typedName)
-                    : selfDiner && list.some((s) => s.diner_id === selfDiner.id);
-                  return (
-                    <div key={mt} className="rounded-[12px] border border-cocm-ink/10 bg-white p-3">
-                      <div className="flex items-center justify-between">
-                        <p className="flex items-center gap-1.5 font-semibold text-cocm-ink">
-                          <span className={`h-2 w-2 rounded-full ${mealDotColor[mt]}`} />
-                          {mealLabel(mt)}
-                          <span className="text-xs font-normal text-cocm-slate">
-                            {(othersMode ? !!typedName : !!selfDiner) ? `${formatMoney(unitPrice, 'GBP')}${t.perPersonSuffix}` : ''}
-                          </span>
-                        </p>
-                        <button
-                          type="button"
-                          disabled={pendingKey === `book:${mt}` || (othersMode ? !typedName : !selfDiner) || !!alreadyBooked}
-                          onClick={() => book(mt)}
-                          title={alreadyBooked ? t.alreadySignedUp : undefined}
-                          className="rounded-[10px] bg-cocm-red px-4 py-2 text-sm font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark active:scale-[0.98] disabled:opacity-40"
-                        >
-                          {pendingKey === `book:${mt}` ? '…' : alreadyBooked ? t.signedUp : t.bookMeal}
-                        </button>
-                      </div>
-                      {list.length > 0 ? (
-                        <ul className="mt-2 space-y-1">
-                          {list.map((s) => {
-                            const isMine = s.booked_by === myUserId || s.user_id === myUserId;
-                            return (
-                              <li key={s.id} className="flex items-center justify-between gap-2 text-[13px]">
-                                <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-                                  <span className="truncate font-semibold text-cocm-ink">
-                                    {s.display_name ?? '—'}
+                {mealTypes
+                  .filter((mt) => isMealAvailable(selectedDay, mt))
+                  .map((mt) => {
+                    const list = selectedSignups.filter((s) => s.meal_type === mt);
+                    const alreadyBooked = othersMode
+                      ? !!typedName && list.some((s) => (s.display_name ?? '').trim() === typedName)
+                      : selfDiner && list.some((s) => s.diner_id === selfDiner.id);
+                    return (
+                      <div
+                        key={mt}
+                        className="rounded-[12px] border border-cocm-ink/10 bg-white p-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="flex items-center gap-1.5 font-semibold text-cocm-ink">
+                            <span className={`h-2 w-2 rounded-full ${mealDotColor[mt]}`} />
+                            {mealLabel(mt)}
+                            <span className="text-xs font-normal text-cocm-slate">
+                              {(othersMode ? !!typedName : !!selfDiner)
+                                ? `${formatMoney(unitPrice, 'GBP')}${t.perPersonSuffix}`
+                                : ''}
+                            </span>
+                          </p>
+                          <button
+                            type="button"
+                            disabled={
+                              pendingKey === `book:${mt}` ||
+                              (othersMode ? !typedName : !selfDiner) ||
+                              !!alreadyBooked
+                            }
+                            onClick={() => book(mt)}
+                            title={alreadyBooked ? t.alreadySignedUp : undefined}
+                            className="rounded-[10px] bg-cocm-red px-4 py-2 text-sm font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark active:scale-[0.98] disabled:opacity-40"
+                          >
+                            {pendingKey === `book:${mt}`
+                              ? '…'
+                              : alreadyBooked
+                                ? t.signedUp
+                                : t.bookMeal}
+                          </button>
+                        </div>
+                        {list.length > 0 ? (
+                          <ul className="mt-2 space-y-1">
+                            {list.map((s) => {
+                              const isMine = s.booked_by === myUserId || s.user_id === myUserId;
+                              return (
+                                <li
+                                  key={s.id}
+                                  className="flex items-center justify-between gap-2 text-[13px]"
+                                >
+                                  <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+                                    <span className="truncate font-semibold text-cocm-ink">
+                                      {s.display_name ?? '—'}
+                                    </span>
+                                    {(Number(s.headcount) || 1) > 1 ? (
+                                      <span className="text-cocm-slate">×{s.headcount}</span>
+                                    ) : null}
+                                    <span className="rounded-full bg-cocm-ink/[0.06] px-1.5 py-px text-[11px] text-cocm-slate">
+                                      {identityLabel(s.identity)}
+                                    </span>
                                   </span>
-                                  {(Number(s.headcount) || 1) > 1 ? (
-                                    <span className="text-cocm-slate">×{s.headcount}</span>
+                                  {isMine ? (
+                                    <button
+                                      type="button"
+                                      disabled={pendingKey === `cancel:${s.id}`}
+                                      onClick={() => cancel(s.id)}
+                                      className="shrink-0 text-xs font-semibold text-cocm-slate underline-offset-2 hover:text-cocm-red hover:underline disabled:opacity-50"
+                                    >
+                                      {pendingKey === `cancel:${s.id}` ? '…' : t.cancelBooking}
+                                    </button>
                                   ) : null}
-                                  <span className="rounded-full bg-cocm-ink/[0.06] px-1.5 py-px text-[11px] text-cocm-slate">
-                                    {identityLabel(s.identity)}
-                                  </span>
-                                </span>
-                                {isMine ? (
-                                  <button
-                                    type="button"
-                                    disabled={pendingKey === `cancel:${s.id}`}
-                                    onClick={() => cancel(s.id)}
-                                    className="shrink-0 text-xs font-semibold text-cocm-slate underline-offset-2 hover:text-cocm-red hover:underline disabled:opacity-50"
-                                  >
-                                    {pendingKey === `cancel:${s.id}` ? '…' : t.cancelBooking}
-                                  </button>
-                                ) : null}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      ) : (
-                        <p className="mt-1.5 text-[13px] text-cocm-slate">{t.noSignupsYet}</p>
-                      )}
-                    </div>
-                  );
-                })}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : (
+                          <p className="mt-1.5 text-[13px] text-cocm-slate">{t.noSignupsYet}</p>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           )}
