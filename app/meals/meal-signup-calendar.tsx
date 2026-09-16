@@ -125,11 +125,20 @@ export function MealSignupCalendar({
   const [rosterFilter, setRosterFilter] = useState('');
 
   useEffect(() => {
+    // Prefer the diner linked to this account (meal_diners.user_id) so
+    // self-booking is automatic. Fall back to the browser-remembered choice
+    // for accounts with no linked diner.
+    const linked = diners.find((d) => d.user_id === myUserId);
+    if (linked) {
+      setMyDinerId(linked.id);
+      return;
+    }
     try {
       setMyDinerId(localStorage.getItem(MY_DINER_KEY));
     } catch {
       setMyDinerId(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const pickSelf = (id: string) => {
