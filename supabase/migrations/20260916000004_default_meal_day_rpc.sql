@@ -22,3 +22,5 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.ensure_default_meal_day(date) TO authenticated;
+REVOKE ALL ON FUNCTION public.ensure_default_meal_day(date) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.ensure_default_meal_day(date) FROM anon;
