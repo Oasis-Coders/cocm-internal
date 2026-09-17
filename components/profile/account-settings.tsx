@@ -6,7 +6,7 @@ import { resolveDisplayName } from '@/lib/auth/auth-utils';
 import { getSession } from '@/lib/auth/session';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { translations, type Lang } from '@/lib/i18n/translations';
+import { resolveLang, translations, type Lang } from '@/lib/i18n/translations';
 
 type AccountSettingsProps = {
   searchParams: {
@@ -87,7 +87,7 @@ function Alert({ tone, text }: { tone: 'success' | 'error'; text: string }) {
 
 export async function AccountSettings({ searchParams }: AccountSettingsProps) {
   const store = await cookies();
-  const lang: Lang = store.get('lang')?.value === 'en' ? 'en' : 'zh';
+  const lang: Lang = resolveLang(store.get('lang')?.value);
   const t = translations[lang].profile;
   const session = await getSession();
 

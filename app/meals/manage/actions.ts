@@ -111,12 +111,14 @@ export async function markCampDay(date: string): Promise<{ ok: boolean; error?: 
     note: string | null;
   } | null;
 
-  // Camp days serve lunch by default when creating a fresh row.
+  // Marking a date as a camp day must never change meal availability:
+  // a fresh row is created with all meals off, an existing row keeps its
+  // availability untouched. Admins enable meals via meal-date management.
   const { error } = await supabase.from('meal_days').upsert(
     {
       meal_date: date,
       breakfast_available: row?.breakfast_available ?? false,
-      lunch_available: row?.lunch_available ?? true,
+      lunch_available: row?.lunch_available ?? false,
       dinner_available: row?.dinner_available ?? false,
       is_camp_day: true,
       note: row?.note ?? null,

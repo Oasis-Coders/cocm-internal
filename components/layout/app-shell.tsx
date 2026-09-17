@@ -4,7 +4,7 @@ import { MobileSidebar } from '@/components/layout/mobile-sidebar';
 import { SidebarPanel } from '@/components/layout/sidebar-panel';
 import { localizeNavItem, navItems, type Lang } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
-import { translations } from '@/lib/i18n/translations';
+import { resolveLang, translations } from '@/lib/i18n/translations';
 
 type AppShellProps = {
   title: string;
@@ -14,7 +14,7 @@ type AppShellProps = {
 
 async function getLang(): Promise<Lang> {
   const store = await cookies();
-  return store.get('lang')?.value === 'en' ? 'en' : 'zh';
+  return resolveLang(store.get('lang')?.value);
 }
 
 export async function AppShell({ title, eyebrow, children }: AppShellProps) {

@@ -87,6 +87,7 @@ function MarkCampDayForm({ t }: { t: MealsT }) {
         {isPending ? '…' : t.markCampDay}
       </button>
       {msg ? <p className="w-full text-[13px] text-cocm-slate">{msg}</p> : null}
+      <p className="w-full text-[12px] leading-relaxed text-cocm-slate/80">{t.campDayHint}</p>
     </form>
   );
 }
