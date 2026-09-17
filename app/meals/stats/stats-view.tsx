@@ -70,12 +70,25 @@ function formatDay(dateStr: string, lang: Lang) {
   const [y, m, d] = dateStr.split('-').map(Number);
   const dt = new Date(y, m - 1, d);
   const wd = dt.getDay();
-  if (lang === 'zh') {
+  if (lang !== 'en') {
     const wds = ['日', '一', '二', '三', '四', '五', '六'];
     return `${m}月${d}日 周${wds[wd]}`;
   }
   const wds = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   return `${wds[wd]}, ${months[m - 1]} ${d}`;
 }
 
@@ -101,11 +114,18 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
 
   const identityLabel = (identity: DinerIdentity | null): string => {
     switch (identity) {
-      case 'staff': return t.identityStaff;
-      case 'staff_family': return t.identityStaffFamily;
-      case 'friend': return t.identityFriend;
-      case 'camp_mate': return t.identityCampMate;
-      default: return t.identityOther;
+      case 'staff':
+        return t.identityStaff;
+      case 'staff_family':
+        return t.identityStaffFamily;
+      case 'volunteer':
+        return t.identityVolunteer;
+      case 'friend':
+        return t.identityFriend;
+      case 'camp_mate':
+        return t.identityCampMate;
+      default:
+        return t.identityOther;
     }
   };
   const mealLabel = (meal: string) =>
@@ -149,7 +169,9 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
       note: note.trim() ? note.trim() : null,
     };
     const result =
-      dialog.mode === 'payment' ? await recordDinerPayment(payload) : await adjustDinerBalance(payload);
+      dialog.mode === 'payment'
+        ? await recordDinerPayment(payload)
+        : await adjustDinerBalance(payload);
     setBusy(false);
     if (!result.ok) {
       setError(t.actionFailed);
@@ -216,10 +238,12 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
                     className="flex w-full items-center justify-between gap-3 py-3 text-left transition hover:bg-cocm-ink/[0.02]"
                   >
                     <span className="flex min-w-0 items-center gap-2">
-                      <span className="font-semibold text-cocm-ink">{formatDay(day.date, lang)}</span>
+                      <span className="font-semibold text-cocm-ink">
+                        {formatDay(day.date, lang)}
+                      </span>
                       {day.isCamp ? (
                         <span className="rounded bg-cocm-red/10 px-1.5 py-0.5 text-[11px] font-bold text-cocm-red">
-                          {lang === 'zh' ? '营会' : 'CAMP'}
+                          {lang === 'zh-Hant' ? '營會' : lang !== 'en' ? '营会' : 'CAMP'}
                         </span>
                       ) : null}
                       {day.note ? (
@@ -227,10 +251,24 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
                       ) : null}
                     </span>
                     <span className="flex shrink-0 items-center gap-3 text-sm text-cocm-slate">
-                      {day.counts.breakfast > 0 ? <span>{t.breakfast} {day.counts.breakfast}</span> : null}
-                      {day.counts.lunch > 0 ? <span>{t.lunch} {day.counts.lunch}</span> : null}
-                      {day.counts.dinner > 0 ? <span>{t.dinner} {day.counts.dinner}</span> : null}
-                      <span className="min-w-[3ch] text-right font-bold text-cocm-ink">{day.total}</span>
+                      {day.counts.breakfast > 0 ? (
+                        <span>
+                          {t.breakfast} {day.counts.breakfast}
+                        </span>
+                      ) : null}
+                      {day.counts.lunch > 0 ? (
+                        <span>
+                          {t.lunch} {day.counts.lunch}
+                        </span>
+                      ) : null}
+                      {day.counts.dinner > 0 ? (
+                        <span>
+                          {t.dinner} {day.counts.dinner}
+                        </span>
+                      ) : null}
+                      <span className="min-w-[3ch] text-right font-bold text-cocm-ink">
+                        {day.total}
+                      </span>
                       <span className="text-cocm-slate/60">{open ? '▾' : '▸'}</span>
                     </span>
                   </button>
@@ -244,7 +282,9 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
                             <tr className="border-b border-cocm-ink/10 text-xs uppercase tracking-[0.12em] text-cocm-slate">
                               <th className="px-3 py-2 font-semibold">{t.name}</th>
                               <th className="px-3 py-2 font-semibold">{t.dinerIdentity}</th>
-                              <th className="px-3 py-2 font-semibold">{t.breakfast}/{t.lunch}/{t.dinner}</th>
+                              <th className="px-3 py-2 font-semibold">
+                                {t.breakfast}/{t.lunch}/{t.dinner}
+                              </th>
                               <th className="px-3 py-2 text-right font-semibold">{t.count}</th>
                               <th className="px-3 py-2 text-right font-semibold">{t.amount}</th>
                               <th className="px-3 py-2 text-right font-semibold">{t.bookedBy}</th>
@@ -252,7 +292,10 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
                           </thead>
                           <tbody>
                             {day.signups.map((s, i) => (
-                              <tr key={`${s.meal}-${s.name}-${i}`} className="border-b border-cocm-ink/5 last:border-0">
+                              <tr
+                                key={`${s.meal}-${s.name}-${i}`}
+                                className="border-b border-cocm-ink/5 last:border-0"
+                              >
                                 <td className="px-3 py-2 font-semibold text-cocm-ink">{s.name}</td>
                                 <td className="px-3 py-2">
                                   <span className="rounded-full bg-cocm-ink/[0.06] px-2 py-0.5 text-xs text-cocm-slate">
@@ -260,9 +303,15 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
                                   </span>
                                 </td>
                                 <td className="px-3 py-2 text-cocm-slate">{mealLabel(s.meal)}</td>
-                                <td className="px-3 py-2 text-right text-cocm-slate">{s.headcount}</td>
-                                <td className="px-3 py-2 text-right text-cocm-slate">{formatMoney(s.price, CURRENCY)}</td>
-                                <td className="px-3 py-2 text-right text-cocm-slate">{s.bookedBy}</td>
+                                <td className="px-3 py-2 text-right text-cocm-slate">
+                                  {s.headcount}
+                                </td>
+                                <td className="px-3 py-2 text-right text-cocm-slate">
+                                  {formatMoney(s.price, CURRENCY)}
+                                </td>
+                                <td className="px-3 py-2 text-right text-cocm-slate">
+                                  {s.bookedBy}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -309,7 +358,9 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
                         <td className="px-4 py-3">
                           <button
                             type="button"
-                            onClick={() => setExpanded((p) => ({ ...p, [row.dinerId]: !p[row.dinerId] }))}
+                            onClick={() =>
+                              setExpanded((p) => ({ ...p, [row.dinerId]: !p[row.dinerId] }))
+                            }
                             className="text-left font-semibold text-cocm-ink hover:text-cocm-red"
                             title={t.paymentHistory}
                           >
@@ -325,27 +376,51 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right text-cocm-slate">{row.meals}</td>
-                        <td className="px-4 py-3 text-right text-cocm-slate">{formatMoney(row.owed, CURRENCY)}</td>
-                        <td className="px-4 py-3 text-right text-cocm-slate">{formatMoney(row.paid, CURRENCY)}</td>
+                        <td className="px-4 py-3 text-right text-cocm-slate">
+                          {row.identity === 'volunteer' && row.owed === 0 ? (
+                            <span className="font-semibold text-green-700">{t.volunteerFree}</span>
+                          ) : (
+                            formatMoney(row.owed, CURRENCY)
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right text-cocm-slate">
+                          {formatMoney(row.paid, CURRENCY)}
+                        </td>
                         <td className="px-4 py-3 text-right text-cocm-slate">
                           {row.adjusted === 0 ? (
                             '—'
                           ) : (
-                            <span className={row.adjusted > 0 ? 'font-semibold text-green-700' : 'font-semibold text-cocm-red'}>
+                            <span
+                              className={
+                                row.adjusted > 0
+                                  ? 'font-semibold text-green-700'
+                                  : 'font-semibold text-cocm-red'
+                              }
+                            >
                               {row.adjusted > 0 ? t.adjustWaiver : t.adjustCharge}{' '}
                               {formatMoney(Math.abs(row.adjusted), CURRENCY)}
                             </span>
                           )}
                         </td>
-                        <td className={`px-4 py-3 text-right font-semibold ${settled ? 'text-green-700' : 'text-cocm-red'}`}>
+                        <td
+                          className={`px-4 py-3 text-right font-semibold ${settled ? 'text-green-700' : 'text-cocm-red'}`}
+                        >
                           {settled ? t.settledNote : formatMoney(row.outstanding, CURRENCY)}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex justify-end gap-1.5">
-                            <button type="button" className={btnPrimary} onClick={() => openDialog('payment', row)}>
+                            <button
+                              type="button"
+                              className={btnPrimary}
+                              onClick={() => openDialog('payment', row)}
+                            >
                               {t.recordPayment}
                             </button>
-                            <button type="button" className={btnGhost} onClick={() => openDialog('adjust', row)}>
+                            <button
+                              type="button"
+                              className={btnGhost}
+                              onClick={() => openDialog('adjust', row)}
+                            >
                               {t.adjustBalance}
                             </button>
                             <button
@@ -370,24 +445,46 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
                             ) : (
                               <ul className="space-y-1.5">
                                 {history.map((p) => (
-                                  <li key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                                    <span className="text-cocm-slate">{formatDateTime(p.created_at, lang)}</span>
-                                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.kind === 'payment' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                                  <li
+                                    key={p.id}
+                                    className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm"
+                                  >
+                                    <span className="text-cocm-slate">
+                                      {formatDateTime(p.created_at, lang)}
+                                    </span>
+                                    <span
+                                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.kind === 'payment' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}
+                                    >
                                       {p.kind === 'payment' ? t.kindPayment : t.kindAdjustment}
                                     </span>
-                                    <span className={`font-semibold ${p.kind === 'adjustment' && p.amount < 0 ? 'text-cocm-red' : p.kind === 'adjustment' ? 'text-green-700' : 'text-cocm-ink'}`}>
+                                    <span
+                                      className={`font-semibold ${p.kind === 'adjustment' && p.amount < 0 ? 'text-cocm-red' : p.kind === 'adjustment' ? 'text-green-700' : 'text-cocm-ink'}`}
+                                    >
                                       {p.kind === 'adjustment'
                                         ? `${p.amount < 0 ? t.adjustCharge : t.adjustWaiver} ${formatMoney(Math.abs(p.amount), CURRENCY)}`
                                         : formatMoney(p.amount, CURRENCY)}
                                     </span>
-                                    {p.note ? <span className="text-cocm-slate">{p.note}</span> : null}
+                                    {p.note ? (
+                                      <span className="text-cocm-slate">{p.note}</span>
+                                    ) : null}
                                     {confirmDelete === p.id ? (
                                       <span className="flex items-center gap-1.5 text-xs">
-                                        <span className="text-cocm-slate">{t.confirmDeleteEntry}</span>
-                                        <button type="button" className={btnPrimary} disabled={busy} onClick={() => submitDelete(p.id)}>
+                                        <span className="text-cocm-slate">
+                                          {t.confirmDeleteEntry}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          className={btnPrimary}
+                                          disabled={busy}
+                                          onClick={() => submitDelete(p.id)}
+                                        >
                                           {t.deleteEntry}
                                         </button>
-                                        <button type="button" className={btnGhost} onClick={() => setConfirmDelete(null)}>
+                                        <button
+                                          type="button"
+                                          className={btnGhost}
+                                          onClick={() => setConfirmDelete(null)}
+                                        >
                                           {t.clearSelection}
                                         </button>
                                       </span>
@@ -411,9 +508,15 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
                   );
                 })}
                 <tr className="bg-cocm-ink/[0.03] font-semibold">
-                  <td className="px-4 py-3 text-cocm-ink" colSpan={3}>{tc.total}</td>
-                  <td className="px-4 py-3 text-right text-cocm-ink">{formatMoney(totals.owed, CURRENCY)}</td>
-                  <td className="px-4 py-3 text-right text-cocm-ink">{formatMoney(totals.paid, CURRENCY)}</td>
+                  <td className="px-4 py-3 text-cocm-ink" colSpan={3}>
+                    {tc.total}
+                  </td>
+                  <td className="px-4 py-3 text-right text-cocm-ink">
+                    {formatMoney(totals.owed, CURRENCY)}
+                  </td>
+                  <td className="px-4 py-3 text-right text-cocm-ink">
+                    {formatMoney(totals.paid, CURRENCY)}
+                  </td>
                   <td className="px-4 py-3 text-right text-cocm-ink">
                     {totals.adjusted === 0 ? (
                       '—'
@@ -443,7 +546,12 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
               .replace('{amount}', formatMoney(confirmPaid.outstanding, CURRENCY))
               .replace('{period}', period)}
           </span>
-          <button type="button" className={btnPrimary} disabled={busy} onClick={() => submitConfirmPaid(confirmPaid)}>
+          <button
+            type="button"
+            className={btnPrimary}
+            disabled={busy}
+            onClick={() => submitConfirmPaid(confirmPaid)}
+          >
             {t.confirmPayment}
           </button>
           <button type="button" className={btnGhost} onClick={() => setConfirmPaid(null)}>
@@ -475,7 +583,12 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
             <label className="mt-4 flex flex-col gap-1 text-sm">
               <span className="font-semibold text-cocm-ink">{t.paymentAmount} (£)</span>
               <span className="relative block">
-                <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-cocm-slate">£</span>
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-cocm-slate"
+                >
+                  £
+                </span>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -500,7 +613,12 @@ export function StatsView({ days, diners, paymentsByDiner, period, t, tc, lang }
             </label>
             {error ? <p className="mt-2 text-sm text-cocm-red">{error}</p> : null}
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" className={btnGhost} disabled={busy} onClick={() => setDialog(null)}>
+              <button
+                type="button"
+                className={btnGhost}
+                disabled={busy}
+                onClick={() => setDialog(null)}
+              >
                 {t.clearSelection}
               </button>
               <button type="button" className={btnPrimary} disabled={busy} onClick={submitDialog}>

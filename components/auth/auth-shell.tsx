@@ -11,9 +11,11 @@ type AuthShellProps = {
 };
 
 function featureList(lang: Lang): string[] {
-  return lang === 'zh'
-    ? ['聚餐报名，一键参加', '费用结算，清晰透明', '成员管理，权限分明']
-    : ['One-tap meal signups', 'Clear expense settlement', 'Role-based member access'];
+  return lang === 'zh-Hant'
+    ? ['聚餐報名，一鍵參加', '費用結算，清晰透明', '成員管理，權限分明']
+    : lang === 'zh'
+      ? ['聚餐报名，一键参加', '费用结算，清晰透明', '成员管理，权限分明']
+      : ['One-tap meal signups', 'Clear expense settlement', 'Role-based member access'];
 }
 
 /**
@@ -23,8 +25,9 @@ function featureList(lang: Lang): string[] {
  * Right: paper background form column with mobile branding on top.
  */
 export function AuthShell({ lang, title, subtitle, children }: AuthShellProps) {
-  const isZh = lang === 'zh';
-  const brand = isZh ? 'COCM 内部系统' : 'COCM Internal';
+  const isZh = lang !== 'en';
+  const brand =
+    lang === 'zh-Hant' ? 'COCM 內部系統' : lang === 'zh' ? 'COCM 内部系统' : 'COCM Internal';
 
   return (
     <div className="flex min-h-screen w-full">
@@ -50,21 +53,28 @@ export function AuthShell({ lang, title, subtitle, children }: AuthShellProps) {
 
           <div className="space-y-6">
             <h1 className="font-serif text-[42px] leading-[1.15] text-white">
-              {isZh ? '把教会' : 'Run your'}
+              {lang === 'zh-Hant' ? '把教會' : isZh ? '把教会' : 'Run your'}
               <br />
-              <span className="text-[#f4d7c4]">{isZh ? '内部事务' : 'ministry ops'}</span>
+              <span className="text-[#f4d7c4]">
+                {lang === 'zh-Hant' ? '內部事務' : isZh ? '内部事务' : 'ministry ops'}
+              </span>
               <br />
-              {isZh ? '打理得井井有条' : 'with ease'}
+              {lang === 'zh-Hant' ? '打理得井井有條' : isZh ? '打理得井井有条' : 'with ease'}
             </h1>
             <p className="max-w-[360px] text-[15px] leading-relaxed text-white/60">
-              {isZh
-                ? '聚餐报名、费用结算、成员管理，一站式内部协作平台。'
-                : 'Meal signups, expense settlement, member management — one internal hub.'}
+              {lang === 'zh-Hant'
+                ? '聚餐報名、費用結算、成員管理，一站式內部協作平台。'
+                : isZh
+                  ? '聚餐报名、费用结算、成员管理，一站式内部协作平台。'
+                  : 'Meal signups, expense settlement, member management — one internal hub.'}
             </p>
             <ul className="space-y-2.5 pt-2">
               {featureList(lang).map((feature) => (
                 <li key={feature} className="flex items-center gap-2.5 text-[13px] text-white/70">
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-cocm-red" aria-hidden="true" />
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full bg-cocm-red"
+                    aria-hidden="true"
+                  />
                   {feature}
                 </li>
               ))}
@@ -100,7 +110,11 @@ export function AuthShell({ lang, title, subtitle, children }: AuthShellProps) {
           {children}
 
           <div className="mt-8 text-center text-[11px] text-cocm-slate/60">
-            {isZh ? '安全登录 · 数据加密' : 'Secure login · Encrypted data'}
+            {lang === 'zh-Hant'
+              ? '安全登錄 · 數據加密'
+              : isZh
+                ? '安全登录 · 数据加密'
+                : 'Secure login · Encrypted data'}
           </div>
         </div>
       </div>

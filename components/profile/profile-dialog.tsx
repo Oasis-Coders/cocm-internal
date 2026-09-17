@@ -18,7 +18,7 @@ type Props = {
 export function ProfileDialog({ displayName, email, roleLabel, avatarInitial }: Props) {
   const { t, lang } = useT();
   const router = useRouter();
-  const isZh = lang === 'zh';
+  const isZh = lang !== 'en';
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(displayName);
@@ -75,7 +75,12 @@ export function ProfileDialog({ displayName, email, roleLabel, avatarInitial }: 
       } else if (res.error === 'too-short') {
         setPwMsg({
           tone: 'err',
-          text: isZh ? '密码至少需要 6 位。' : 'Password must be at least 6 characters.',
+          text:
+            lang === 'zh-Hant'
+              ? '密碼至少需要 6 位。'
+              : isZh
+                ? '密码至少需要 6 位。'
+                : 'Password must be at least 6 characters.',
         });
       } else {
         setPwMsg({ tone: 'err', text: t.auth.invalidCredentials });
@@ -85,8 +90,7 @@ export function ProfileDialog({ displayName, email, roleLabel, avatarInitial }: 
     }
   };
 
-  const msgClass = (tone: 'ok' | 'err') =>
-    tone === 'ok' ? 'text-emerald-700' : 'text-cocm-red';
+  const msgClass = (tone: 'ok' | 'err') => (tone === 'ok' ? 'text-emerald-700' : 'text-cocm-red');
 
   return (
     <>
@@ -98,7 +102,7 @@ export function ProfileDialog({ displayName, email, roleLabel, avatarInitial }: 
         className="group block w-full rounded-[10px] border border-white/[0.08] bg-white/[0.06] px-3 py-2 text-left transition-colors hover:border-white/20 hover:bg-white/[0.10]"
       >
         <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
-          {isZh ? '当前身份' : 'Role'}
+          {lang === 'zh-Hant' ? '當前身份' : isZh ? '当前身份' : 'Role'}
         </p>
         <div className="mt-1.5 flex items-center gap-2">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-cocm-red text-[12px] font-bold text-white">
@@ -133,7 +137,7 @@ export function ProfileDialog({ displayName, email, roleLabel, avatarInitial }: 
         >
           <button
             type="button"
-            aria-label={isZh ? '关闭' : 'Close'}
+            aria-label={lang === 'zh-Hant' ? '關閉' : isZh ? '关闭' : 'Close'}
             onClick={close}
             className="absolute inset-0 cursor-default bg-cocm-ink/45 backdrop-blur-sm"
           />
@@ -146,10 +150,18 @@ export function ProfileDialog({ displayName, email, roleLabel, avatarInitial }: 
               <button
                 type="button"
                 onClick={close}
-                aria-label={isZh ? '关闭' : 'Close'}
+                aria-label={lang === 'zh-Hant' ? '關閉' : isZh ? '关闭' : 'Close'}
                 className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-white/70 transition hover:bg-white/15 hover:text-white"
               >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  aria-hidden="true"
+                >
                   <path d="M3 3l8 8M11 3l-8 8" strokeLinecap="round" />
                 </svg>
               </button>
@@ -236,8 +248,16 @@ export function ProfileDialog({ displayName, email, roleLabel, avatarInitial }: 
                 onClick={close}
                 className="flex items-center justify-center gap-1.5 rounded-[12px] border border-cocm-ink/10 bg-cocm-ink/[0.03] px-4 py-2.5 text-[13px] font-medium text-cocm-ink transition hover:bg-cocm-ink/[0.06]"
               >
-                {isZh ? '更多设置' : 'More settings'}
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                {lang === 'zh-Hant' ? '更多設置' : isZh ? '更多设置' : 'More settings'}
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  aria-hidden="true"
+                >
                   <path d="M4 2l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </Link>

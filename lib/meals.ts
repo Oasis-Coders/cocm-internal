@@ -2,12 +2,19 @@ export type MealType = 'breakfast' | 'lunch' | 'dinner';
 
 export const mealTypes: MealType[] = ['breakfast', 'lunch', 'dinner'];
 
-/** Who is eating: staff, staff family, friend, camp participant, or other. */
-export type DinerIdentity = 'staff' | 'staff_family' | 'friend' | 'camp_mate' | 'other';
+/** Who is eating: staff, staff family, volunteer, friend, camp participant, or other. */
+export type DinerIdentity =
+  | 'staff'
+  | 'staff_family'
+  | 'volunteer'
+  | 'friend'
+  | 'camp_mate'
+  | 'other';
 
 export const dinerIdentities: DinerIdentity[] = [
   'staff',
   'staff_family',
+  'volunteer',
   'friend',
   'camp_mate',
   'other',
@@ -16,6 +23,11 @@ export const dinerIdentities: DinerIdentity[] = [
 /** Staff & staff family pay the staff price; everyone else pays the other price. */
 export function isStaffIdentity(identity: DinerIdentity | string | null | undefined): boolean {
   return identity === 'staff' || identity === 'staff_family';
+}
+
+/** Volunteers eat free (price_volunteer, defaults to 0). */
+export function isVolunteerIdentity(identity: DinerIdentity | string | null | undefined): boolean {
+  return identity === 'volunteer';
 }
 
 export type MealDiner = {
@@ -44,8 +56,14 @@ export type MealSettings = {
   price_staff: number;
   /** Per-meal price for everyone else. */
   price_other: number;
+  /** Per-meal price for volunteers (defaults to 0 = free). */
+  price_volunteer: number;
   currency: string;
   transfer_info: string;
+  /** Camp meal clock times (HH:MM), shown in the camp meal overview. */
+  breakfast_time: string;
+  lunch_time: string;
+  dinner_time: string;
 };
 
 export type MealSignup = {
@@ -67,15 +85,42 @@ export const defaultMealSettings: MealSettings = {
   dinner_price: 0,
   price_staff: 3,
   price_other: 5,
+  price_volunteer: 0,
   currency: 'GBP',
   transfer_info: '',
+  breakfast_time: '08:00',
+  lunch_time: '12:30',
+  dinner_time: '18:00',
 };
 
-/** Identity-based price: staff & staff family vs everyone else. */
+/** Build a full MealSettings from a DB row (new columns may be missing on old rows). */
+export function mealSettingsFromRow(row: Record<string, unknown> | null | undefined): MealSettings {
+  const num = (v: unknown, fallback: number) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  const str = (v: unknown, fallback: string) => (typeof v === 'string' && v ? v : fallback);
+  return {
+    breakfast_price: num(row?.breakfast_price, 0),
+    lunch_price: num(row?.lunch_price, 0),
+    dinner_price: num(row?.dinner_price, 0),
+    price_staff: num(row?.price_staff, 3),
+    price_other: num(row?.price_other, 5),
+    price_volunteer: num(row?.price_volunteer, 0),
+    currency: str(row?.currency, 'GBP'),
+    transfer_info: str(row?.transfer_info, ''),
+    breakfast_time: str(row?.breakfast_time, '08:00'),
+    lunch_time: str(row?.lunch_time, '12:30'),
+    dinner_time: str(row?.dinner_time, '18:00'),
+  };
+}
+
+/** Identity-based price: volunteers eat free, staff & staff family get the staff price. */
 export function priceForIdentity(
   settings: MealSettings,
   identity: DinerIdentity | string | null | undefined
 ): number {
+  if (isVolunteerIdentity(identity)) return Number(settings.price_volunteer) || 0;
   return isStaffIdentity(identity)
     ? Number(settings.price_staff) || 0
     : Number(settings.price_other) || 0;

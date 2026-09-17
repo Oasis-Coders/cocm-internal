@@ -2,7 +2,13 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 
 import { AuthShell } from '@/components/auth/auth-shell';
-import { translations, type Lang } from '@/lib/i18n/translations';
+import {
+  translations,
+  type Lang,
+  resolveLang,
+  nextLang,
+  langLabels,
+} from '@/lib/i18n/translations';
 
 type AuthCardProps = {
   mode: 'sign-in' | 'sign-up';
@@ -18,9 +24,16 @@ const inputClassName =
 
 const labelClassName = 'block text-[13px] font-semibold tracking-[0.01em] text-cocm-ink';
 
-export async function AuthCard({ mode, action, redirectTo, status, message, forgotPasswordLabel }: AuthCardProps) {
+export async function AuthCard({
+  mode,
+  action,
+  redirectTo,
+  status,
+  message,
+  forgotPasswordLabel,
+}: AuthCardProps) {
   const store = await cookies();
-  const lang: Lang = store.get('lang')?.value === 'en' ? 'en' : 'zh';
+  const lang: Lang = resolveLang(store.get('lang')?.value);
   const t = translations[lang].auth;
 
   const copy =
@@ -50,7 +63,10 @@ export async function AuthCard({ mode, action, redirectTo, status, message, forg
   return (
     <AuthShell lang={lang} title={copy.title} subtitle={copy.subtitle}>
       {message ? (
-        <div className={`mb-4 rounded-[12px] border p-4 text-sm leading-relaxed ${alertClassName}`} role="alert">
+        <div
+          className={`mb-4 rounded-[12px] border p-4 text-sm leading-relaxed ${alertClassName}`}
+          role="alert"
+        >
           {message}
         </div>
       ) : null}
@@ -99,14 +115,16 @@ export async function AuthCard({ mode, action, redirectTo, status, message, forg
             type="password"
             required
             autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
-            placeholder={mode === 'sign-in' ? t.passwordPlaceholderSignIn : t.passwordPlaceholderSignUp}
+            placeholder={
+              mode === 'sign-in' ? t.passwordPlaceholderSignIn : t.passwordPlaceholderSignUp
+            }
             className={inputClassName}
           />
         </div>
 
         <button
           type="submit"
-          className="h-11 w-full rounded-[12px] bg-cocm-blue px-6 text-[15px] font-semibold text-white transition-all hover:bg-[#3f43a8] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cocm-blue/40"
+          className="h-11 w-full rounded-[12px] bg-cocm-blue px-6 text-[15px] font-semibold text-white transition-all hover:bg-[#3f43a8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cocm-blue/40 active:scale-[0.99]"
         >
           {copy.submit}
         </button>
@@ -149,12 +167,12 @@ export async function AuthCard({ mode, action, redirectTo, status, message, forg
       ) : null}
 
       <form action="/api/lang" method="post" className="mt-6 flex justify-center">
-        <input type="hidden" name="lang" value={lang === 'zh' ? 'en' : 'zh'} />
+        <input type="hidden" name="lang" value={nextLang(lang)} />
         <button
           type="submit"
           className="rounded-full border border-cocm-ink/15 px-4 py-1.5 text-[13px] font-semibold text-cocm-slate transition hover:border-cocm-ink/30 hover:text-cocm-ink"
         >
-          {lang === 'zh' ? 'English' : '中文'}
+          {langLabels[nextLang(lang)]}
         </button>
       </form>
     </AuthShell>

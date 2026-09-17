@@ -50,11 +50,27 @@ export function MobileSidebar({ children }: { children: React.ReactNode }) {
         aria-label={isOpen ? 'Close navigation' : 'Open navigation'}
       >
         {isOpen ? (
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 18 18"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
+          >
             <path d="M4 4l10 10M14 4L4 14" strokeLinecap="round" />
           </svg>
         ) : (
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            aria-hidden="true"
+          >
             <path d="M3 6h14M3 10h14M3 14h14" strokeLinecap="round" />
           </svg>
         )}
@@ -76,7 +92,7 @@ export function MobileSidebar({ children }: { children: React.ReactNode }) {
         <div
           id="mobile-drawer"
           className={cn(
-            'absolute inset-y-0 left-0 w-[280px] max-w-[85vw] bg-cocm-ink overscroll-contain transition-transform duration-300 ease-in-out',
+            'absolute inset-y-0 left-0 w-[280px] max-w-[85vw] overscroll-contain bg-cocm-ink transition-transform duration-300 ease-in-out',
             isOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >

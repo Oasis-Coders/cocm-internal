@@ -6,10 +6,11 @@ import { AppShell } from '@/components/layout/app-shell';
 import { EmptyState } from '@/components/layout/empty-state';
 import { getSession } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { translations, type Lang } from '@/lib/i18n/translations';
+import { translations, type Lang, resolveLang } from '@/lib/i18n/translations';
 import {
   addDaysIso,
   defaultMealDay,
+  mealSettingsFromRow,
   todayIso,
   type MealDay,
   type MealDiner,
@@ -19,10 +20,13 @@ import {
   addDiner,
   setDinerActive,
   updateMealPrices,
+  updateMealTimes,
   updateTransferInfo,
 } from '@/app/meals/manage/actions';
 import { MealCalendar } from '@/app/meals/manage/meal-calendar';
 import { RosterManager } from '@/app/meals/manage/roster-manager';
+import { CampOverview } from '@/components/meals/camp-overview';
+import { getCampOverview } from '@/lib/meals/camp';
 
 type ManagePageProps = {
   searchParams: Promise<{ saved?: string; error?: string }>;
@@ -36,7 +40,7 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
 
   const params = await searchParams;
   const store = await cookies();
-  const lang: Lang = store.get('lang')?.value === 'en' ? 'en' : 'zh';
+  const lang: Lang = resolveLang(store.get('lang')?.value);
   const t = translations[lang].meals;
   const tc = translations[lang].common;
 
@@ -89,15 +93,8 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
     signupCounts[r.meal_date] = (signupCounts[r.meal_date] ?? 0) + (Number(r.headcount) || 1);
   }
 
-  const settings: MealSettings = {
-    breakfast_price: Number(settingsRow?.breakfast_price ?? 0),
-    lunch_price: Number(settingsRow?.lunch_price ?? 0),
-    dinner_price: Number(settingsRow?.dinner_price ?? 0),
-    price_staff: Number(settingsRow?.price_staff ?? 3),
-    price_other: Number(settingsRow?.price_other ?? 5),
-    currency: (settingsRow?.currency as string) ?? 'GBP',
-    transfer_info: (settingsRow?.transfer_info as string) ?? '',
-  };
+  const settings: MealSettings = mealSettingsFromRow(settingsRow);
+  const campDays = await getCampOverview(supabase!, settings);
   // Merge the Mon–Fri lunch default so the admin sees effective
   // availability and can override any day. Explicit rows win.
   const dayMap = new Map<string, MealDay>();
@@ -133,8 +130,13 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
           {t.saved}
         </p>
       ) : null}
+      {params.error ? (
+        <p className="mb-4 rounded-xl border border-cocm-red/20 bg-cocm-red/[0.06] px-4 py-3 text-sm text-cocm-red">
+          {params.error === 'invalid-time' ? t.invalidTime : t.actionFailed}
+        </p>
+      ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <form
           action={updateMealPrices}
           className="rounded-[20px] border border-cocm-ink/10 bg-white p-5 shadow-card md:p-6"
@@ -184,6 +186,61 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
               </span>
               <span className="text-xs text-cocm-slate">{t.priceOtherHint}</span>
             </label>
+            <label className="flex min-w-0 flex-col gap-1 text-sm">
+              <span className="font-semibold text-cocm-ink">{t.priceVolunteer}</span>
+              <span className="relative block">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-cocm-slate"
+                >
+                  £
+                </span>
+                <input
+                  type="number"
+                  name="price_volunteer"
+                  min="0"
+                  step="0.01"
+                  required
+                  defaultValue={settings.price_volunteer.toFixed(2)}
+                  className={`${inputClass} w-full min-w-0 pl-8`}
+                />
+              </span>
+              <span className="text-xs text-cocm-slate">{t.priceVolunteerHint}</span>
+            </label>
+          </div>
+          <button
+            type="submit"
+            className="mt-4 rounded-[12px] bg-cocm-red px-5 py-2.5 text-sm font-semibold text-white shadow-red-glow transition-all hover:bg-cocm-red-dark active:scale-[0.98]"
+          >
+            {tc.save}
+          </button>
+        </form>
+
+        <form
+          action={updateMealTimes}
+          className="rounded-[20px] border border-cocm-ink/10 bg-white p-5 shadow-card md:p-6"
+        >
+          <h3 className="font-serif text-xl text-cocm-ink">{t.mealTimesTitle}</h3>
+          <p className="mt-1 text-sm text-cocm-slate">{t.mealTimesDesc}</p>
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            {(
+              [
+                ['breakfast_time', t.breakfastTime, settings.breakfast_time],
+                ['lunch_time', t.lunchTime, settings.lunch_time],
+                ['dinner_time', t.dinnerTime, settings.dinner_time],
+              ] as Array<[string, string, string]>
+            ).map(([name, label, value]) => (
+              <label key={name} className="flex min-w-0 flex-col gap-1 text-sm">
+                <span className="font-semibold text-cocm-ink">{label}</span>
+                <input
+                  type="time"
+                  name={name}
+                  required
+                  defaultValue={value}
+                  className={`${inputClass} w-full min-w-0`}
+                />
+              </label>
+            ))}
           </div>
           <button
             type="submit"
@@ -213,6 +270,17 @@ export default async function ManageMealsPage({ searchParams }: ManagePageProps)
             {tc.save}
           </button>
         </form>
+      </div>
+
+      <div className="mt-4">
+        <CampOverview
+          days={campDays}
+          t={t}
+          lang={lang}
+          showControls
+          title={t.campMealsTitle}
+          desc={t.campMealsDesc}
+        />
       </div>
 
       <div className="mt-4">

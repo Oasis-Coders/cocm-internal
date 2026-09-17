@@ -35,7 +35,7 @@ function weekdayLabel(dateIso: string, lang: Lang): string {
   if (Number.isNaN(d.getTime())) return '';
   const zh = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
   const en = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  return lang === 'zh' ? zh[d.getDay()] : en[d.getDay()];
+  return lang !== 'en' ? zh[d.getDay()] : en[d.getDay()];
 }
 
 export function DailyHeadcountCard({ lang, initialDate, initial, labels }: Props) {

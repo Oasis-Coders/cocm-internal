@@ -62,11 +62,7 @@ export async function getSession(): Promise<SessionInfo> {
 
   const [{ data: roleRows }, { data: profile }] = await Promise.all([
     supabase.from('user_roles').select('roles(name)').eq('user_id', user.id),
-    supabase
-      .from('profiles')
-      .select('display_name, email')
-      .eq('id', user.id)
-      .maybeSingle(),
+    supabase.from('profiles').select('display_name, email').eq('id', user.id).maybeSingle(),
   ]);
 
   const role = pickPrimaryRole(roleRows as RoleRow[] | null);

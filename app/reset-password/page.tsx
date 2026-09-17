@@ -6,7 +6,13 @@ import { AuthShell } from '@/components/auth/auth-shell';
 import { getSession } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
-import { translations, type Lang } from '@/lib/i18n/translations';
+import {
+  translations,
+  type Lang,
+  resolveLang,
+  nextLang,
+  langLabels,
+} from '@/lib/i18n/translations';
 
 type ResetPasswordPageProps = {
   searchParams: Promise<{
@@ -55,7 +61,7 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
   const session = await getSession();
 
   const store = await cookies();
-  const lang: Lang = store.get('lang')?.value === 'en' ? 'en' : 'zh';
+  const lang: Lang = resolveLang(store.get('lang')?.value);
   const t = translations[lang].auth;
   const supabaseReady = hasSupabaseEnv();
 
@@ -97,7 +103,10 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
 
           <form action={setNewPassword} className="space-y-4">
             <div>
-              <label htmlFor="password" className="block text-[13px] font-semibold tracking-[0.01em] text-cocm-ink">
+              <label
+                htmlFor="password"
+                className="block text-[13px] font-semibold tracking-[0.01em] text-cocm-ink"
+              >
                 {t.newPassword}
               </label>
               <input
@@ -113,7 +122,7 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
             </div>
             <button
               type="submit"
-              className="h-11 w-full rounded-[12px] bg-cocm-blue px-6 text-[15px] font-semibold text-white transition-all hover:bg-[#3f43a8] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cocm-blue/40"
+              className="h-11 w-full rounded-[12px] bg-cocm-blue px-6 text-[15px] font-semibold text-white transition-all hover:bg-[#3f43a8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cocm-blue/40 active:scale-[0.99]"
             >
               {t.resetPasswordCta}
             </button>
@@ -122,12 +131,12 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
       )}
 
       <form action="/api/lang" method="post" className="mt-6 flex justify-center">
-        <input type="hidden" name="lang" value={lang === 'zh' ? 'en' : 'zh'} />
+        <input type="hidden" name="lang" value={nextLang(lang)} />
         <button
           type="submit"
           className="rounded-full border border-cocm-ink/15 px-4 py-1.5 text-[13px] font-semibold text-cocm-slate transition hover:border-cocm-ink/30 hover:text-cocm-ink"
         >
-          {lang === 'zh' ? 'English' : '中文'}
+          {langLabels[nextLang(lang)]}
         </button>
       </form>
     </AuthShell>

@@ -7,7 +7,7 @@ import { EmptyState } from '@/components/layout/empty-state';
 import { appRoles, type AppRole } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { translations, type Lang } from '@/lib/i18n/translations';
+import { translations, type Lang, resolveLang } from '@/lib/i18n/translations';
 
 type ProfileRow = {
   id: string;
@@ -74,15 +74,16 @@ async function revokeRole(formData: FormData) {
 
 function roleLabel(role: string, lang: Lang): string {
   if (lang === 'en') return role.replace('_', ' ');
+  const hant = lang === 'zh-Hant';
   switch (role) {
     case 'super_admin':
-      return '超级管理员';
+      return hant ? '超級管理員' : '超级管理员';
     case 'admin':
-      return '管理员';
+      return hant ? '管理員' : '管理员';
     case 'staff':
       return '同工';
     case 'user':
-      return '用户';
+      return hant ? '用戶' : '用户';
     default:
       return role;
   }
@@ -91,7 +92,7 @@ function roleLabel(role: string, lang: Lang): string {
 export default async function AdminUsersPage() {
   const session = await getSession();
   const store = await cookies();
-  const lang: Lang = store.get('lang')?.value === 'en' ? 'en' : 'zh';
+  const lang: Lang = resolveLang(store.get('lang')?.value);
   const t = translations[lang].admin;
 
   const supabase = await createSupabaseServerClient();

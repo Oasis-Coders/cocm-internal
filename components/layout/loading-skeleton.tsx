@@ -49,10 +49,7 @@ function DashboardContent() {
     <>
       <div className="mt-6 grid gap-5 md:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="border-cocm-ink/8 rounded-card border bg-white p-6 shadow-card"
-          >
+          <div key={i} className="border-cocm-ink/8 rounded-card border bg-white p-6 shadow-card">
             <Pulse className="h-3 w-20" />
             <Pulse className="mt-3 h-8 w-16" />
             <Pulse className="mt-2 h-3 w-full" />

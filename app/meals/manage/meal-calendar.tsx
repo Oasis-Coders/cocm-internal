@@ -63,7 +63,7 @@ function todayIso() {
 
 function formatDay(dateStr: string, lang: Lang) {
   const [, m, d] = dateStr.split('-').map(Number);
-  if (lang === 'zh') return `${m}月${d}日`;
+  if (lang !== 'en') return `${m}月${d}日`;
   const months = [
     'Jan',
     'Feb',
@@ -82,7 +82,7 @@ function formatDay(dateStr: string, lang: Lang) {
 }
 
 function formatMonth(year: number, month: number, lang: Lang) {
-  if (lang === 'zh') return `${year}年${month}月`;
+  if (lang !== 'en') return `${year}年${month}月`;
   return `${EN_MONTHS[month - 1]} ${year}`;
 }
 
@@ -114,7 +114,6 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
     breakfast: true,
     lunch: true,
     dinner: true,
-    campDay: false,
     note: '',
   });
   useEffect(() => {
@@ -126,7 +125,6 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
         breakfast: existing ? existing.breakfast_available : true,
         lunch: existing ? existing.lunch_available : true,
         dinner: existing ? existing.dinner_available : true,
-        campDay: existing ? existing.is_camp_day : false,
         note: existing?.note ?? '',
       });
     } else {
@@ -142,7 +140,6 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
         breakfast: seed ? seed.breakfast_available : true,
         lunch: seed ? seed.lunch_available : true,
         dinner: seed ? seed.dinner_available : true,
-        campDay: seed ? seed.is_camp_day : false,
         note: '',
       });
     }
@@ -169,7 +166,7 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
   }, [viewYear, viewMonth]);
 
   const weekdays =
-    lang === 'zh'
+    lang !== 'en'
       ? ['一', '二', '三', '四', '五', '六', '日']
       : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -371,17 +368,7 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
                   </span>
                   {isDefault && !isEndpoint ? (
                     <span className="rounded bg-cocm-ink/[0.06] px-1 text-[10px] font-semibold leading-tight text-cocm-slate">
-                      {lang === 'zh' ? '默认' : 'auto'}
-                    </span>
-                  ) : null}
-                  {day?.is_camp_day ? (
-                    <span
-                      title={t.campDay}
-                      className={`rounded px-1 text-[10px] font-bold leading-tight ${
-                        isEndpoint ? 'bg-white/25 text-white' : 'bg-cocm-red/10 text-cocm-red'
-                      }`}
-                    >
-                      {lang === 'zh' ? '营会' : 'CAMP'}
+                      {t.defaultBadge}
                     </span>
                   ) : null}
                   {day ? (
@@ -431,17 +418,11 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
               <span className="rounded-full bg-cocm-ink/[0.06] px-1.5 text-[10px] font-semibold">
                 3
               </span>
-              {lang === 'zh' ? '报名人次' : 'signups'}
+              {t.signupCount}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="font-semibold text-cocm-red">•</span>
               {t.today}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="rounded bg-cocm-red/10 px-1 text-[10px] font-bold text-cocm-red">
-                {lang === 'zh' ? '营会' : 'CAMP'}
-              </span>
-              {t.campDay}
             </span>
           </div>
         </div>
@@ -468,8 +449,10 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
               </h4>
               {(signupCounts[selection.start] ?? 0) > 0 ? (
                 <p className="mt-1 text-[12px] text-cocm-slate">
-                  {lang === 'zh'
-                    ? `${signupCounts[selection.start]} 人已报名`
+                  {lang !== 'en'
+                    ? lang === 'zh-Hant'
+                      ? `${signupCounts[selection.start]} 人已報名`
+                      : `${signupCounts[selection.start]} 人已报名`
                     : `${signupCounts[selection.start]} signed up`}
                 </p>
               ) : null}
@@ -493,19 +476,6 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
                     {mealLabel(mt)}
                   </button>
                 ))}
-                <button
-                  type="button"
-                  aria-pressed={editor.campDay}
-                  onClick={() => setEditor((e) => ({ ...e, campDay: !e.campDay }))}
-                  title={t.campDayHint}
-                  className={`flex items-center gap-1.5 rounded-[10px] border px-3 py-2 text-sm font-semibold transition active:scale-[0.97] ${
-                    editor.campDay
-                      ? 'border-cocm-red bg-cocm-red text-white shadow-red-glow'
-                      : 'border-cocm-ink/15 bg-white text-cocm-slate hover:border-cocm-ink/30'
-                  }`}
-                >
-                  ⛺ {t.campDay}
-                </button>
               </div>
 
               <label className="mt-4 block text-[13px] font-semibold text-cocm-ink">
@@ -530,7 +500,6 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
                       breakfast: editor.breakfast,
                       lunch: editor.lunch,
                       dinner: editor.dinner,
-                      campDay: editor.campDay,
                       note: editor.note || null,
                     })
                   )
@@ -585,10 +554,12 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
                 {formatDay(selection.start, lang)} – {formatDay(selection.end, lang)}
               </h4>
               <p className="mt-1 text-[12px] text-cocm-slate">
-                {lang === 'zh' ? `共 ${selectedCount} 天` : `${selectedCount} days`}
+                {lang !== 'en' ? `共 ${selectedCount} 天` : `${selectedCount} days`}
                 {rangeSignupTotal > 0
-                  ? lang === 'zh'
-                    ? ` · ${rangeSignupTotal} 人次已报名`
+                  ? lang !== 'en'
+                    ? lang === 'zh-Hant'
+                      ? ` · ${rangeSignupTotal} 人次已報名`
+                      : ` · ${rangeSignupTotal} 人次已报名`
                     : ` · ${rangeSignupTotal} signups`
                   : ''}
               </p>
@@ -612,19 +583,6 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
                     {mealLabel(mt)}
                   </button>
                 ))}
-                <button
-                  type="button"
-                  aria-pressed={editor.campDay}
-                  onClick={() => setEditor((e) => ({ ...e, campDay: !e.campDay }))}
-                  title={t.campDayHint}
-                  className={`flex items-center gap-1.5 rounded-[10px] border px-3 py-2 text-sm font-semibold transition active:scale-[0.97] ${
-                    editor.campDay
-                      ? 'border-cocm-red bg-cocm-red text-white shadow-red-glow'
-                      : 'border-cocm-ink/15 bg-white text-cocm-slate hover:border-cocm-ink/30'
-                  }`}
-                >
-                  ⛺ {t.campDay}
-                </button>
               </div>
 
               <button
@@ -638,7 +596,6 @@ export function MealCalendar({ days, defaultDates, signupCounts, t, tc, lang }: 
                       breakfast: editor.breakfast,
                       lunch: editor.lunch,
                       dinner: editor.dinner,
-                      campDay: editor.campDay,
                     })
                   )
                 }

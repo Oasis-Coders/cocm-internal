@@ -96,7 +96,12 @@ export async function recordDinerPayment(input: {
   const { session, supabase } = await requireMealAdmin();
 
   const amount = parseAmount(input.amount);
-  if (!isValidUuid(input.dinerId) || !isValidPeriod(input.period) || amount === null || amount <= 0) {
+  if (
+    !isValidUuid(input.dinerId) ||
+    !isValidPeriod(input.period) ||
+    amount === null ||
+    amount <= 0
+  ) {
     return { ok: false, error: 'invalid-input' };
   }
 

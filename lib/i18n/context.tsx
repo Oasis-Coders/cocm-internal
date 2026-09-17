@@ -1,12 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { translations, type Lang } from './translations';
+import { translations, type Lang, resolveLang, nextLang, htmlLangAttr } from './translations';
 
 type I18nContextType = {
   lang: Lang;
   setLang: (l: Lang) => void;
-  t: typeof translations.en | typeof translations.zh;
+  t: typeof translations.en | typeof translations.zh | (typeof translations)['zh-Hant'];
   toggle: () => void;
 };
 
@@ -14,13 +14,18 @@ const I18nContext = createContext<I18nContextType | null>(null);
 
 function getInitialLang(): Lang {
   if (typeof window === 'undefined') return 'zh';
-  const cookie = document.cookie.split('; ').find((r) => r.startsWith('lang='))?.split('=')[1] as Lang | undefined;
-  if (cookie === 'en' || cookie === 'zh') return cookie;
-  const stored = localStorage.getItem('lang') as Lang | null;
-  if (stored === 'en' || stored === 'zh') return stored;
+  const cookie = document.cookie
+    .split('; ')
+    .find((r) => r.startsWith('lang='))
+    ?.split('=')[1];
+  const fromCookie = resolveLang(cookie);
+  if (cookie === 'en' || cookie === 'zh' || cookie === 'zh-Hant') return fromCookie;
+  const stored = localStorage.getItem('lang');
+  if (stored === 'en' || stored === 'zh' || stored === 'zh-Hant') return stored;
   const browser = navigator.language.toLowerCase();
-  if (browser.startsWith('zh')) return 'zh';
-  return 'zh'; // default to zh per user base, but toggle available
+  if (browser.startsWith('zh-tw') || browser.startsWith('zh-hk') || browser.startsWith('zh-mo'))
+    return 'zh-Hant';
+  return 'zh'; // default to zh per user base, cycle available
 }
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
@@ -37,11 +42,11 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('lang', l);
     document.cookie = `lang=${l}; path=/; max-age=31536000`;
     // update html lang attr
-    document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+    document.documentElement.lang = htmlLangAttr(l);
   }, []);
 
   const toggle = useCallback(() => {
-    setLang(lang === 'zh' ? 'en' : 'zh');
+    setLang(nextLang(lang));
   }, [lang, setLang]);
 
   // avoid hydration mismatch by rendering zh initially on server, then sync

@@ -7,7 +7,7 @@ import { buildSignUpMetadata, sanitizeRedirectTo } from '@/lib/auth/auth-utils';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { hasSupabaseAdminEnv, hasSupabaseEnv } from '@/lib/supabase/env';
-import { translations, type Lang } from '@/lib/i18n/translations';
+import { translations, type Lang, resolveLang } from '@/lib/i18n/translations';
 
 type SignUpPageProps = {
   searchParams: Promise<{
@@ -102,7 +102,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   }
 
   const store = await cookies();
-  const lang: Lang = store.get('lang')?.value === 'en' ? 'en' : 'zh';
+  const lang: Lang = resolveLang(store.get('lang')?.value);
   const t = translations[lang].auth;
 
   const message = params.error ? t.signUpFailed : undefined;

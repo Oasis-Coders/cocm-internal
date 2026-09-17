@@ -26,7 +26,7 @@ type Props = {
   signups: MealSignup[];
   recentDiners: MealDiner[];
   myUserId: string;
-  prices: { price_staff: number; price_other: number };
+  prices: { price_staff: number; price_other: number; price_volunteer: number };
   t: MealsT;
   lang: Lang;
 };
@@ -64,7 +64,7 @@ function todayIso() {
 }
 function formatDay(dateStr: string, lang: Lang) {
   const [, m, d] = dateStr.split('-').map(Number);
-  if (lang === 'zh') return `${m}月${d}日`;
+  if (lang !== 'en') return `${m}月${d}日`;
   const months = [
     'Jan',
     'Feb',
@@ -82,7 +82,7 @@ function formatDay(dateStr: string, lang: Lang) {
   return `${months[m - 1]} ${d}`;
 }
 function formatMonth(year: number, month: number, lang: Lang) {
-  if (lang === 'zh') return `${year}年${month}月`;
+  if (lang !== 'en') return `${year}年${month}月`;
   return `${EN_MONTHS[month - 1]} ${year}`;
 }
 
@@ -199,7 +199,7 @@ export function MealSignupCalendar({
   }, [viewYear, viewMonth]);
 
   const weekdays =
-    lang === 'zh'
+    lang !== 'en'
       ? ['一', '二', '三', '四', '五', '六', '日']
       : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -209,6 +209,8 @@ export function MealSignupCalendar({
         return t.identityStaff;
       case 'staff_family':
         return t.identityStaffFamily;
+      case 'volunteer':
+        return t.identityVolunteer;
       case 'friend':
         return t.identityFriend;
       case 'camp_mate':
@@ -251,6 +253,13 @@ export function MealSignupCalendar({
       ? (diners.find((d) => d.name === typedName) ??
         diners.find((d) => d.name.toLowerCase() === typedName.toLowerCase()))
       : undefined;
+  const effectiveIdentity: DinerIdentity | string | null = othersMode
+    ? matchedDiner
+      ? matchedDiner.identity
+      : guestIdentity
+    : selfDiner
+      ? selfDiner.identity
+      : null;
   const unitPrice = othersMode
     ? priceForIdentity(
         {
@@ -258,6 +267,9 @@ export function MealSignupCalendar({
           breakfast_price: 0,
           lunch_price: 0,
           dinner_price: 0,
+          breakfast_time: '',
+          lunch_time: '',
+          dinner_time: '',
           currency: 'GBP',
           transfer_info: '',
         },
@@ -272,6 +284,9 @@ export function MealSignupCalendar({
             breakfast_price: 0,
             lunch_price: 0,
             dinner_price: 0,
+            breakfast_time: '',
+            lunch_time: '',
+            dinner_time: '',
             currency: 'GBP',
             transfer_info: '',
           },
@@ -426,7 +441,7 @@ export function MealSignupCalendar({
                     <span
                       className={`rounded px-1 text-[10px] font-bold leading-tight ${isSel ? 'bg-white/25 text-white' : 'bg-cocm-red/10 text-cocm-red'}`}
                     >
-                      {lang === 'zh' ? '营会' : 'CAMP'}
+                      {lang === 'zh-Hant' ? '營會' : lang !== 'en' ? '营会' : 'CAMP'}
                     </span>
                   ) : null}
                   {day ? (
@@ -466,7 +481,7 @@ export function MealSignupCalendar({
               <span className="rounded-full bg-cocm-ink/[0.06] px-1.5 text-[10px] font-semibold">
                 3
               </span>
-              {lang === 'zh' ? '报名人次' : 'signups'}
+              {lang === 'zh-Hant' ? '報名人次' : lang !== 'en' ? '报名人次' : 'signups'}
             </span>
           </div>
         </div>
@@ -489,7 +504,7 @@ export function MealSignupCalendar({
                 {formatDay(selected, lang)}
                 {selectedDay.is_camp_day ? (
                   <span className="rounded bg-cocm-red/10 px-1.5 py-0.5 text-xs font-bold text-cocm-red">
-                    {lang === 'zh' ? '营会' : 'CAMP'}
+                    {lang === 'zh-Hant' ? '營會' : lang !== 'en' ? '营会' : 'CAMP'}
                   </span>
                 ) : null}
               </h4>
@@ -679,7 +694,9 @@ export function MealSignupCalendar({
                             {mealLabel(mt)}
                             <span className="text-xs font-normal text-cocm-slate">
                               {(othersMode ? !!typedName : !!selfDiner)
-                                ? `${formatMoney(unitPrice, 'GBP')}${t.perPersonSuffix}`
+                                ? effectiveIdentity === 'volunteer'
+                                  ? t.volunteerFree
+                                  : `${formatMoney(unitPrice, 'GBP')}${t.perPersonSuffix}`
                                 : ''}
                             </span>
                           </p>

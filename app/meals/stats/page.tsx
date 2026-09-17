@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
 import { getSession } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { translations, type Lang } from '@/lib/i18n/translations';
+import { translations, type Lang, resolveLang } from '@/lib/i18n/translations';
 import {
   currentYearMonth,
   monthBounds,
@@ -15,6 +15,9 @@ import {
 } from '@/lib/meals';
 import { StatsView, type DayStat, type DinerStat } from '@/app/meals/stats/stats-view';
 import type { DinerPayment } from '@/app/meals/stats/actions';
+import { CampOverview } from '@/components/meals/camp-overview';
+import { getCampOverview } from '@/lib/meals/camp';
+import { mealSettingsFromRow } from '@/lib/meals';
 
 type PageProps = {
   searchParams: Promise<{ month?: string }>;
@@ -27,7 +30,7 @@ function isValidPeriod(value: string): boolean {
 export default async function MealStatsPage({ searchParams }: PageProps) {
   const session = await getSession();
   const store = await cookies();
-  const lang: Lang = store.get('lang')?.value === 'en' ? 'en' : 'zh';
+  const lang: Lang = resolveLang(store.get('lang')?.value);
   const t = translations[lang].meals;
   const tc = translations[lang].common;
 
@@ -40,34 +43,50 @@ export default async function MealStatsPage({ searchParams }: PageProps) {
 
   const params = await searchParams;
   const { year: cy, month: cm } = currentYearMonth();
-  const period = params.month && isValidPeriod(params.month)
-    ? params.month
-    : `${cy}-${String(cm).padStart(2, '0')}`;
+  const period =
+    params.month && isValidPeriod(params.month)
+      ? params.month
+      : `${cy}-${String(cm).padStart(2, '0')}`;
   const year = Number(period.slice(0, 4));
   const month = Number(period.slice(5, 7));
   const { start, end } = monthBounds(year, month);
 
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: dayRows }, { data: signupRows }, { data: dinerRows }, { data: paymentRows }] = await Promise.all([
-    supabase!.from('meal_days')
-      .select('meal_date, breakfast_available, lunch_available, dinner_available, is_camp_day, note')
-      .gte('meal_date', start)
-      .lt('meal_date', end)
-      .order('meal_date', { ascending: true }),
-    supabase!.from('meal_signups')
-      .select('id, meal_date, meal_type, diner_id, display_name, identity, headcount, price, booked_by')
-      .gte('meal_date', start)
-      .lt('meal_date', end)
-      .order('meal_date', { ascending: true }),
-    supabase!.from('meal_diners').select('id, name, identity').limit(2000),
-    supabase!.from('meal_payments')
-      .select('id, diner_id, user_id, period, kind, amount, note, recorded_by, created_at')
-      .eq('period', period)
-      .order('created_at', { ascending: false }),
-  ]);
+  const [{ data: dayRows }, { data: signupRows }, { data: dinerRows }, { data: paymentRows }] =
+    await Promise.all([
+      supabase!
+        .from('meal_days')
+        .select(
+          'meal_date, breakfast_available, lunch_available, dinner_available, is_camp_day, note'
+        )
+        .gte('meal_date', start)
+        .lt('meal_date', end)
+        .order('meal_date', { ascending: true }),
+      supabase!
+        .from('meal_signups')
+        .select(
+          'id, meal_date, meal_type, diner_id, display_name, identity, headcount, price, booked_by'
+        )
+        .gte('meal_date', start)
+        .lt('meal_date', end)
+        .order('meal_date', { ascending: true }),
+      supabase!.from('meal_diners').select('id, name, identity').limit(2000),
+      supabase!
+        .from('meal_payments')
+        .select('id, diner_id, user_id, period, kind, amount, note, recorded_by, created_at')
+        .eq('period', period)
+        .order('created_at', { ascending: false }),
+    ]);
 
-  const diners = ((dinerRows ?? []) as MealDiner[]);
+  const { data: settingsRow } = await supabase!
+    .from('meal_settings')
+    .select('breakfast_time, lunch_time, dinner_time')
+    .eq('id', 1)
+    .maybeSingle();
+  const campDays = await getCampOverview(supabase!, mealSettingsFromRow(settingsRow));
+
+  const diners = (dinerRows ?? []) as MealDiner[];
   const dinerName = new Map(diners.map((d) => [d.id, d.name]));
   const dinerIdentity = new Map(diners.map((d) => [d.id, d.identity]));
 
@@ -82,28 +101,35 @@ export default async function MealStatsPage({ searchParams }: PageProps) {
     price: number | string | null;
     booked_by: string | null;
   };
-  const signups = ((signupRows ?? []) as SignupRow[]);
+  const signups = (signupRows ?? []) as SignupRow[];
 
   // Booker display names.
   const bookerIds = [...new Set(signups.map((s) => s.booked_by).filter(Boolean))] as string[];
   let bookerName = new Map<string, string>();
   if (bookerIds.length > 0) {
-    const { data: profiles } = await supabase!.from('profiles')
+    const { data: profiles } = await supabase!
+      .from('profiles')
       .select('id, display_name')
       .in('id', bookerIds);
-    bookerName = new Map(((profiles ?? []) as Array<{ id: string; display_name: string | null }>)
-      .map((p) => [p.id, p.display_name ?? '—']));
+    bookerName = new Map(
+      ((profiles ?? []) as Array<{ id: string; display_name: string | null }>).map((p) => [
+        p.id,
+        p.display_name ?? '—',
+      ])
+    );
   }
 
   // Per-day stats.
-  const dayStats: DayStat[] = ((dayRows ?? []) as Array<{
-    meal_date: string;
-    breakfast_available: boolean;
-    lunch_available: boolean;
-    dinner_available: boolean;
-    is_camp_day: boolean;
-    note: string | null;
-  }>).map((d) => {
+  const dayStats: DayStat[] = (
+    (dayRows ?? []) as Array<{
+      meal_date: string;
+      breakfast_available: boolean;
+      lunch_available: boolean;
+      dinner_available: boolean;
+      is_camp_day: boolean;
+      note: string | null;
+    }>
+  ).map((d) => {
     const list = signups.filter((s) => s.meal_date === d.meal_date);
     const counts = { breakfast: 0, lunch: 0, dinner: 0 };
     for (const s of list) {
@@ -120,11 +146,11 @@ export default async function MealStatsPage({ searchParams }: PageProps) {
       total: counts.breakfast + counts.lunch + counts.dinner,
       signups: list.map((s) => ({
         meal: s.meal_type,
-        name: s.display_name ?? (s.diner_id ? dinerName.get(s.diner_id) ?? '—' : '—'),
-        identity: s.identity ?? (s.diner_id ? dinerIdentity.get(s.diner_id) ?? null : null),
+        name: s.display_name ?? (s.diner_id ? (dinerName.get(s.diner_id) ?? '—') : '—'),
+        identity: s.identity ?? (s.diner_id ? (dinerIdentity.get(s.diner_id) ?? null) : null),
         headcount: Number(s.headcount) || 1,
         price: Number(s.price) || 0,
-        bookedBy: s.booked_by ? bookerName.get(s.booked_by) ?? '—' : '—',
+        bookedBy: s.booked_by ? (bookerName.get(s.booked_by) ?? '—') : '—',
       })),
     };
   });
@@ -197,7 +223,7 @@ export default async function MealStatsPage({ searchParams }: PageProps) {
             ‹
           </Link>
           <span className="min-w-[110px] text-center font-serif text-lg text-cocm-ink">
-            {lang === 'zh' ? `${year}年${month}月` : `${period}`}
+            {lang !== 'en' ? `${year}年${month}月` : `${period}`}
           </span>
           <Link
             href={`/meals/stats?month=${fmt(nextMonth)}`}
@@ -207,6 +233,16 @@ export default async function MealStatsPage({ searchParams }: PageProps) {
             ›
           </Link>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <CampOverview
+          days={campDays}
+          t={t}
+          lang={lang}
+          title={t.campMealsTitle}
+          desc={t.campMealsDesc}
+        />
       </div>
 
       <StatsView

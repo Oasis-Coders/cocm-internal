@@ -28,5 +28,5 @@ export function useT() {
     [t]
   );
 
-  return { t, tt, lang, setLang, toggle, isZh: lang === 'zh', isEn: lang === 'en' };
+  return { t, tt, lang, setLang, toggle, isZh: lang !== 'en', isEn: lang === 'en' };
 }

@@ -4,7 +4,7 @@ import { signOut } from '@/app/auth/sign-out-action';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { LanguageSwitcherDark } from '@/components/layout/language-switcher';
 import { ProfileDialog } from '@/components/profile/profile-dialog';
-import type { LocalizedNavItem } from '@/lib/app-config';
+import type { LocalizedNavItem, Lang } from '@/lib/app-config';
 import { cn } from '@/lib/utils';
 
 type SidebarPanelProps = {
@@ -14,7 +14,7 @@ type SidebarPanelProps = {
   roleLabel: string;
   avatarInitial: string;
   signOutLabel: string;
-  lang: 'en' | 'zh';
+  lang: Lang;
   className?: string;
 };
 
@@ -28,7 +28,7 @@ export function SidebarPanel({
   lang,
   className,
 }: SidebarPanelProps) {
-  const isZh = lang === 'zh';
+  const isZh = lang !== 'en';
 
   return (
     <div
@@ -43,7 +43,10 @@ export function SidebarPanel({
           <div className="absolute -left-12 -top-12 h-32 w-32 rounded-full bg-cocm-red/20 blur-[20px]" />
           <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full bg-[#3f43a8] blur-[16px]" />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-br from-cocm-red/10 via-transparent to-transparent" aria-hidden="true" />
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-cocm-red/10 via-transparent to-transparent"
+          aria-hidden="true"
+        />
         <div className="relative px-5 py-6">
           <div className="flex items-center gap-3">
             <Image
@@ -56,10 +59,10 @@ export function SidebarPanel({
             />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[14px] font-semibold leading-tight tracking-tight">
-                {isZh ? '内部系统' : 'COCM Internal'}
+                {lang === 'zh-Hant' ? '內部系統' : isZh ? '内部系统' : 'COCM Internal'}
               </p>
               <span className="text-[11px] font-medium tracking-wide opacity-60">
-                {isZh ? 'COCM 内部' : 'Internal System'}
+                {lang === 'zh-Hant' ? 'COCM 內部' : isZh ? 'COCM 内部' : 'Internal System'}
               </span>
             </div>
           </div>

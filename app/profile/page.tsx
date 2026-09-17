@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 
 import { AppShell } from '@/components/layout/app-shell';
 import { AccountSettings } from '@/components/profile/account-settings';
-import { translations, type Lang } from '@/lib/i18n/translations';
+import { translations, type Lang, resolveLang } from '@/lib/i18n/translations';
 
 type ProfilePageProps = {
   searchParams: Promise<{
@@ -14,7 +14,7 @@ type ProfilePageProps = {
 export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const params = await searchParams;
   const store = await cookies();
-  const lang: Lang = store.get('lang')?.value === 'en' ? 'en' : 'zh';
+  const lang: Lang = resolveLang(store.get('lang')?.value);
   const t = translations[lang].profile;
 
   return (

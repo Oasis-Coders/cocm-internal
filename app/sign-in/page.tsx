@@ -6,7 +6,7 @@ import { getSession } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 import { sanitizeRedirectTo } from '@/lib/auth/auth-utils';
-import { translations, type Lang } from '@/lib/i18n/translations';
+import { translations, type Lang, resolveLang } from '@/lib/i18n/translations';
 
 type SignInPageProps = {
   searchParams: Promise<{
@@ -68,7 +68,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   }
 
   const store = await cookies();
-  const lang: Lang = store.get('lang')?.value === 'en' ? 'en' : 'zh';
+  const lang: Lang = resolveLang(store.get('lang')?.value);
   const t = translations[lang].auth;
 
   if (!supabaseReady) {

@@ -18,8 +18,21 @@ type Props = {
 
 function formatDay(dateStr: string, lang: Lang) {
   const [, m, d] = dateStr.split('-').map(Number);
-  if (lang === 'zh') return `${m}月${d}日`;
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (lang !== 'en') return `${m}月${d}日`;
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   return `${months[m - 1]} ${d}`;
 }
 

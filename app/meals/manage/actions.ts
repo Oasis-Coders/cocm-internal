@@ -35,8 +35,9 @@ export async function updateMealPrices(formData: FormData) {
 
   const priceStaff = parsePrice(formData.get('price_staff'));
   const priceOther = parsePrice(formData.get('price_other'));
+  const priceVolunteer = parsePrice(formData.get('price_volunteer'));
 
-  if (priceStaff === null || priceOther === null) {
+  if (priceStaff === null || priceOther === null || priceVolunteer === null) {
     redirect('/meals/manage?error=invalid-price');
   }
 
@@ -45,6 +46,7 @@ export async function updateMealPrices(formData: FormData) {
     .update({
       price_staff: priceStaff,
       price_other: priceOther,
+      price_volunteer: priceVolunteer,
       updated_by: session.userId,
       updated_at: new Date().toISOString(),
     })
@@ -55,10 +57,103 @@ export async function updateMealPrices(formData: FormData) {
   redirect('/meals/manage?saved=1');
 }
 
+function parseMealTime(value: FormDataEntryValue | null): string | null {
+  if (value === null) return null;
+  const v = String(value).trim();
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) return null;
+  return v;
+}
+
+export async function updateMealTimes(formData: FormData) {
+  const { session, supabase } = await requireMealAdmin();
+
+  const breakfastTime = parseMealTime(formData.get('breakfast_time'));
+  const lunchTime = parseMealTime(formData.get('lunch_time'));
+  const dinnerTime = parseMealTime(formData.get('dinner_time'));
+
+  if (!breakfastTime || !lunchTime || !dinnerTime) {
+    redirect('/meals/manage?error=invalid-time');
+  }
+
+  await supabase
+    .from('meal_settings')
+    .update({
+      breakfast_time: breakfastTime,
+      lunch_time: lunchTime,
+      dinner_time: dinnerTime,
+      updated_by: session.userId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', 1);
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals/stats');
+  revalidatePath('/dashboard');
+  redirect('/meals/manage?saved=1');
+}
+
+/** Mark a date as a camp day (upserts a meal_days row; keeps existing meal flags). */
+export async function markCampDay(date: string): Promise<{ ok: boolean; error?: string }> {
+  const { supabase } = await requireMealAdmin();
+  if (!isValidDate(date)) return { ok: false, error: 'invalid-date' };
+
+  const { data: existing } = await supabase
+    .from('meal_days')
+    .select('meal_date, breakfast_available, lunch_available, dinner_available, note')
+    .eq('meal_date', date)
+    .maybeSingle();
+
+  const row = existing as {
+    meal_date: string;
+    breakfast_available: boolean;
+    lunch_available: boolean;
+    dinner_available: boolean;
+    note: string | null;
+  } | null;
+
+  // Camp days serve lunch by default when creating a fresh row.
+  const { error } = await supabase.from('meal_days').upsert(
+    {
+      meal_date: date,
+      breakfast_available: row?.breakfast_available ?? false,
+      lunch_available: row?.lunch_available ?? true,
+      dinner_available: row?.dinner_available ?? false,
+      is_camp_day: true,
+      note: row?.note ?? null,
+    },
+    { onConflict: 'meal_date' }
+  );
+  if (error) return { ok: false, error: 'save-failed' };
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals/stats');
+  revalidatePath('/dashboard');
+  return { ok: true };
+}
+
+/** Remove the camp-day mark from a date (the meal day itself stays). */
+export async function unmarkCampDay(date: string): Promise<{ ok: boolean; error?: string }> {
+  const { supabase } = await requireMealAdmin();
+  if (!isValidDate(date)) return { ok: false, error: 'invalid-date' };
+
+  const { error } = await supabase
+    .from('meal_days')
+    .update({ is_camp_day: false })
+    .eq('meal_date', date);
+  if (error) return { ok: false, error: 'save-failed' };
+
+  revalidatePath('/meals/manage');
+  revalidatePath('/meals/stats');
+  revalidatePath('/dashboard');
+  return { ok: true };
+}
+
 export async function updateTransferInfo(formData: FormData) {
   const { session, supabase } = await requireMealAdmin();
 
-  const transferInfo = String(formData.get('transferInfo') ?? '').trim().slice(0, 4000);
+  const transferInfo = String(formData.get('transferInfo') ?? '')
+    .trim()
+    .slice(0, 4000);
 
   await supabase
     .from('meal_settings')
@@ -82,7 +177,10 @@ export async function addMealDay(formData: FormData) {
     redirect('/meals/manage?error=invalid-date');
   }
 
-  const note = String(formData.get('note') ?? '').trim().slice(0, 200) || null;
+  const note =
+    String(formData.get('note') ?? '')
+      .trim()
+      .slice(0, 200) || null;
 
   await supabase.from('meal_days').upsert(
     {
@@ -149,7 +247,6 @@ export type MealDayInput = {
   breakfast: boolean;
   lunch: boolean;
   dinner: boolean;
-  campDay: boolean;
   note: string | null;
 };
 
@@ -182,10 +279,10 @@ export async function saveMealDay(input: MealDayInput): Promise<{ ok: boolean; e
     {
       meal_date: input.date,
       breakfast_available: !!input.breakfast,
-      // Camp days always open lunch + dinner signup.
-      lunch_available: input.campDay ? true : !!input.lunch,
-      dinner_available: input.campDay ? true : !!input.dinner,
-      is_camp_day: !!input.campDay,
+      lunch_available: !!input.lunch,
+      dinner_available: !!input.dinner,
+      // is_camp_day is intentionally untouched here: camp days are managed
+      // from the camp meal overview, not from date management.
       note: sanitizeNote(input.note),
     },
     { onConflict: 'meal_date' }
@@ -222,7 +319,6 @@ export async function saveMealDayRange(input: {
   breakfast: boolean;
   lunch: boolean;
   dinner: boolean;
-  campDay: boolean;
 }): Promise<{ ok: boolean; error?: string; count?: number }> {
   const { supabase } = await requireMealAdmin();
 
@@ -238,15 +334,19 @@ export async function saveMealDayRange(input: {
     .select('meal_date, note')
     .gte('meal_date', lo)
     .lte('meal_date', hi);
-  const noteByDate = new Map(((existing ?? []) as Array<{ meal_date: string; note: string | null }>).map((r) => [r.meal_date, r.note]));
+  const noteByDate = new Map(
+    ((existing ?? []) as Array<{ meal_date: string; note: string | null }>).map((r) => [
+      r.meal_date,
+      r.note,
+    ])
+  );
 
   const rows = dates.map((meal_date) => ({
     meal_date,
     breakfast_available: !!input.breakfast,
-    // Camp days always open lunch + dinner signup.
-    lunch_available: input.campDay ? true : !!input.lunch,
-    dinner_available: input.campDay ? true : !!input.dinner,
-    is_camp_day: !!input.campDay,
+    lunch_available: !!input.lunch,
+    dinner_available: !!input.dinner,
+    // is_camp_day is intentionally untouched here (see saveMealDay).
     note: noteByDate.get(meal_date) ?? null,
   }));
 
@@ -290,7 +390,10 @@ function isValidUuid(value: string): boolean {
 }
 
 function sanitizeName(value: FormDataEntryValue | string | null): string | null {
-  const name = String(value ?? '').trim().slice(0, 80).replace(/\s+/g, ' ');
+  const name = String(value ?? '')
+    .trim()
+    .slice(0, 80)
+    .replace(/\s+/g, ' ');
   return name ? name : null;
 }
 
@@ -300,7 +403,9 @@ export async function addDiner(formData: FormData) {
 
   const name = sanitizeName(formData.get('name'));
   const identity = String(formData.get('identity') ?? 'other');
-  const allergens = String(formData.get('allergens') ?? '').trim().slice(0, 200);
+  const allergens = String(formData.get('allergens') ?? '')
+    .trim()
+    .slice(0, 200);
 
   if (!name || !(validIdentities as readonly string[]).includes(identity)) {
     redirect('/meals/manage?error=invalid-diner');

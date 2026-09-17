@@ -23,25 +23,29 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
   const t = translations[lang];
 
   const filteredNav = navItems
-    .filter(
-      (item) => session.isAuthenticated && (!item.roles || item.roles.includes(session.role))
-    )
+    .filter((item) => session.isAuthenticated && (!item.roles || item.roles.includes(session.role)))
     .map((item) => localizeNavItem(item, lang));
 
   const roleLabel =
     session.role === 'super_admin'
-      ? lang === 'zh'
-        ? '超级管理员'
-        : 'Super Admin'
+      ? lang === 'zh-Hant'
+        ? '超級管理員'
+        : lang === 'zh'
+          ? '超级管理员'
+          : 'Super Admin'
       : session.role === 'admin'
-        ? lang === 'zh'
-          ? '管理员'
-          : 'Admin'
-        : session.role === 'user'
-          ? lang === 'zh'
-            ? '用户'
-            : 'User'
+        ? lang === 'zh-Hant'
+          ? '管理員'
           : lang === 'zh'
+            ? '管理员'
+            : 'Admin'
+        : session.role === 'user'
+          ? lang === 'zh-Hant'
+            ? '用戶'
+            : lang === 'zh'
+              ? '用户'
+              : 'User'
+          : lang !== 'en'
             ? '同工'
             : 'Staff';
 
@@ -57,7 +61,7 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[200] focus:rounded-[10px] focus:bg-white focus:px-4 focus:py-2 focus:text-[13px] focus:font-medium focus:text-cocm-ink focus:shadow-lg"
       >
-        {lang === 'zh' ? '跳到主内容' : 'Skip to main content'}
+        {lang === 'zh-Hant' ? '跳到主內容' : lang === 'zh' ? '跳到主内容' : 'Skip to main content'}
       </a>
       <div className="mx-auto flex w-full max-w-[1320px] lg:gap-6 lg:px-6 lg:py-6">
         <MobileSidebar>

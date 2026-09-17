@@ -99,7 +99,7 @@ async function bookMealForDiner(input: BookCoreInput): Promise<{ ok: boolean; er
 
   const { data: settings } = await supabase
     .from('meal_settings')
-    .select('price_staff, price_other')
+    .select('price_staff, price_other, price_volunteer')
     .eq('id', 1)
     .maybeSingle();
 

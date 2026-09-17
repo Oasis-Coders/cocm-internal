@@ -5,13 +5,14 @@ import { AppShell } from '@/components/layout/app-shell';
 import { EmptyState } from '@/components/layout/empty-state';
 import { getSession } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { translations, type Lang } from '@/lib/i18n/translations';
+import { translations, type Lang, resolveLang } from '@/lib/i18n/translations';
 import {
   addDaysIso,
   currentYearMonth,
   defaultMealDay,
   defaultMealSettings,
   formatMoney,
+  mealSettingsFromRow,
   monthBounds,
   todayIso,
   type MealDay,
@@ -154,15 +155,7 @@ async function loadPageData(userId: string): Promise<PageData> {
     const days = [...dayMap.values()].sort((a, b) => (a.meal_date < b.meal_date ? -1 : 1));
 
     return {
-      settings: {
-        breakfast_price: Number(settingsRow?.breakfast_price ?? 0),
-        lunch_price: Number(settingsRow?.lunch_price ?? 0),
-        dinner_price: Number(settingsRow?.dinner_price ?? 0),
-        price_staff: Number(settingsRow?.price_staff ?? 3),
-        price_other: Number(settingsRow?.price_other ?? 5),
-        currency: (settingsRow?.currency as string) ?? 'GBP',
-        transfer_info: (settingsRow?.transfer_info as string) ?? '',
-      },
+      settings: mealSettingsFromRow(settingsRow),
       days,
       diners: (dinerRows ?? []) as MealDiner[],
       signups: (signupRows as MealSignup[]).map((s) => ({
@@ -187,7 +180,7 @@ async function loadPageData(userId: string): Promise<PageData> {
 export default async function MealsPage() {
   const session = await getSession();
   const store = await cookies();
-  const lang: Lang = store.get('lang')?.value === 'en' ? 'en' : 'zh';
+  const lang: Lang = resolveLang(store.get('lang')?.value);
   const t = translations[lang].meals;
 
   if (!session.isAuthenticated || !session.userId) {
@@ -278,6 +271,7 @@ export default async function MealsPage() {
               prices={{
                 price_staff: data.settings.price_staff,
                 price_other: data.settings.price_other,
+                price_volunteer: data.settings.price_volunteer,
               }}
               t={t}
               lang={lang}
