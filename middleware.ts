@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { createServerClient } from '@supabase/ssr';
 
-const protectedPrefixes = ['/dashboard', '/meals', '/profile', '/admin'];
+const protectedPrefixes = ['/dashboard', '/meals', '/profile', '/admin', '/tools'];
 
 const staffOnlyPrefixes = ['/admin'];
 
