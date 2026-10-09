@@ -46,6 +46,12 @@ export const navItems: NavItem[] = [
     description: { zh: '用户与权限', 'zh-Hant': '用戶與權限', en: 'Users and roles' },
     roles: staffPrivilegedRoles,
   },
+  {
+    href: '/tools',
+    label: { zh: '工具', 'zh-Hant': '工具', en: 'Tools' },
+    description: { zh: '问题申报与小工具', 'zh-Hant': '問題申報與小工具', en: 'Issue reports and utilities' },
+    roles: adminPrivilegedRoles,
+  },
 ];
 
 export function localizeNavItem(
