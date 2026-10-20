@@ -6,6 +6,11 @@ import { isTicketAdmin } from '../actions';
 import { resolveLang, type Lang } from '@/lib/i18n/translations';
 import { ticketStrings } from '../ticket-ui';
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 const TITLE: Record<Lang, string> = { zh: '工单详情', 'zh-Hant': '工單詳情', en: 'Ticket detail' };
 
 export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
