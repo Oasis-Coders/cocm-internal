@@ -10,6 +10,11 @@ import { getCampOverview } from '@/lib/meals/camp';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { CampOverview } from '@/components/meals/camp-overview';
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export default async function DashboardPage() {
   const session = await getSession();
   const store = await cookies();
